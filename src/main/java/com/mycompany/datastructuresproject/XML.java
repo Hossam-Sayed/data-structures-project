@@ -1,20 +1,23 @@
 package com.mycompany.datastructuresproject;
 
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Stack;
 
-public class XMLfile {
+public class XML {
 
     private String xml;
-    private ArrayList<String> slicedXML;
     private boolean valid = false;
+    private boolean sliced = false;
+    private ArrayList<String> slicedXML;
+    private Tree xmlTree;
+    private Graph xmlGraph;
 
-    XMLfile(File file) {
+    XML(File file) {
         BufferedReader reader;
         try {
             reader = new BufferedReader(new FileReader(file));
@@ -35,7 +38,7 @@ public class XMLfile {
         }
     }
 
-    XMLfile(String s) {
+    XML(String s) {
         this.xml = s;
     }
 
@@ -93,9 +96,103 @@ public class XMLfile {
             }
         }
     }
+    
+    void xmlToTree() {
+        if (!valid || !sliced) {
+            return;
+        }
+        Stack<TreeNode> s = new Stack<>();
+        for (String item : slicedXML) {
+            if (isOpeningTag(item)) { // If it is an open tag
+                TreeNode root = new TreeNode(removeAngleBrackets(item));
+                if (s.isEmpty()) { // First time to push, We create the Tree object then push <users>
+                    xmlTree = new Tree(root);
+                }
+                s.push(root); // Push open tag to stack
+            } else if (isClosingTag(item)) { // If it is a closed tag
+                TreeNode child = s.peek();
+                s.pop(); // pop closed tag from stack
+                if (s.isEmpty()) {
+                    continue; // Or exit (finished the arraylist)
+                }
+                TreeNode parent = s.peek();
+                parent.insertChild(child); // Make popped tag child to the tag on the top of stack
+            } else if (isTag(item)); else { // If it is data
+                s.peek().setData(item);
+            }
+        }
+    }
+
+    void xmlToGraph() {
+        if (!valid || !sliced) {
+            return;
+        }
+        xmlGraph = new Graph();
+        UserNode user = null;
+        Post post = null;
+        Stack<String> s = new Stack<>();
+        for (String item : slicedXML) {
+            if (isOpeningTag(item)) {
+                s.push(item);
+                switch (item) {
+                    case "<user>" ->
+                        user = new UserNode();
+                    case "<post>" ->
+                        post = new Post();
+                }
+            } else if (isClosingTag(item)) {
+                switch (item) {
+                    case "</user>" ->
+                        xmlGraph.addUser(user); // May set user = null
+                    case "</post>" ->
+                        user.addPost(post); // May set post = null
+                }
+                s.pop();
+            } else if (isTag(item)); else {
+                switch (s.peek()) {
+                    case "<id>" -> {
+                        String str = s.peek();
+                        s.pop();
+                        if (s.peek().equals("<follower>")) {
+                            user.addFollower(item);
+                        } else {
+                            user.setId(item);
+                        }
+                        s.push(str);
+                    }
+                    case "<name>" ->
+                        user.setName(item);
+                    case "<body>" ->
+                        post.setBody(item);
+                    case "<topic>" ->
+                        post.addTopic(item);
+                }
+            }
+        }
+    }
+
+    private boolean isOpeningTag(String str) {
+        return (isTag(str) // It is a tag
+                && str.charAt(1) != '/' // Not a closed tag
+                && str.charAt(1) != '!' // Not a commnet
+                && str.charAt(1) != '?'); // Not a header
+    }
+
+    private boolean isClosingTag(String str) {
+        return (isTag(str) && str.charAt(1) == '/');
+    }
+
+    boolean isTag(String str) {
+        return (str.charAt(0) == '<' // Start with <
+                && str.charAt(str.length() - 1) == '>'); // End with >
+    }
+
+    private String removeAngleBrackets(String str) {
+        return str.substring(1, str.length() - 1);
+    }
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
-        XMLfile xml = new XMLfile(new File("sample.xml"));
+        XML xml = new XML(new File("sample.xml"));
         xml.sliceXML();
         for (String s : xml.slicedXML) {
             System.out.println(s);
