@@ -4,23 +4,28 @@ import java.util.ArrayList;
 
 public class Graph {
 
-    private ArrayList<UserNode> users;
+    private ArrayList<User> users;
 
-    void addUser(UserNode node) {
+    void addUser(User node) {
         users.add(node);
+    }
+    
+    ArrayList<User> getUsers() {
+        return users;
     }
 }
 
-class UserNode {
+class User {
 
+    private int follows = 0;
     private String id;
     private String name;
     private ArrayList<Post> posts;
-    private ArrayList<String> followersIDs;
+    private ArrayList<User> followers;
 
-    public UserNode() {
+    public User() {
         posts = new ArrayList<>();
-        followersIDs = new ArrayList<>();
+        followers = new ArrayList<>();
     }
 
     public void setId(String id) {
@@ -35,8 +40,20 @@ class UserNode {
         posts.add(post);
     }
 
-    public void addFollower(String id) {
-        followersIDs.add(id);
+    public void addFollower(User user) {
+        followers.add(user);
+    }
+    
+    public void incFollows() {
+        follows++;
+    }
+    
+    public int getFollows() {
+        return follows;
+    }
+
+    public ArrayList<User> getFollowers() {
+        return followers;
     }
 }
 

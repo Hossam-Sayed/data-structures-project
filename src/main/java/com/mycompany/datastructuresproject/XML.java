@@ -10,12 +10,13 @@ import java.util.Stack;
 
 public class XML {
 
-    private String xml;
+    int min, max = 0;
     private boolean valid = false;
     private boolean sliced = false;
-    private ArrayList<String> slicedXML;
+    private String xml;
     private Tree xmlTree;
     private Graph xmlGraph;
+    private ArrayList<String> slicedXML;
 
     //O(n), where n is the number of char in xml file
     XML(File file) {
@@ -164,7 +165,20 @@ public class XML {
         }
         this.sliced = true;
     }
+    
+    //O(n), where n is the number of slices in slicedXML
+    String minifyXML() {
+        if (!sliced) {
+            sliceXML();
+        }
+        String minified = "";
+        for (String s : slicedXML) {
+            minified += s;
+        }
+        return minified;
+    }
 
+    // O(n), n is the length of the XML file
     void xmlToTree() {
         if (!valid || !sliced) {
             return;
@@ -191,34 +205,22 @@ public class XML {
         }
     }
 
-    //O(n), where n is the number of slices in slicedXML
-    String minifyXML() {
-        if (!sliced) {
-            sliceXML();
-        }
-        String minified = "";
-        for (String s : slicedXML) {
-            minified += s;
-        }
-        return minified;
-    }
-
+    // O(n), n is the length of the XML file
     void xmlToGraph() {
         if (!valid || !sliced) {
             return;
         }
+        setMaxAndMinIds();
         xmlGraph = new Graph();
-        UserNode user = null;
+        User user = null;
         Post post = null;
+        User dummy[] = new User[max - min + 1];
         Stack<String> s = new Stack<>();
         for (String item : slicedXML) {
             if (isOpeningTag(item)) {
                 s.push(item);
-                switch (item) {
-                    case "<user>" ->
-                        user = new UserNode();
-                    case "<post>" ->
-                        post = new Post();
+                if (item.equals("<post>")) {
+                    post = new Post();
                 }
             } else if (isClosingTag(item)) {
                 switch (item) {
@@ -226,32 +228,80 @@ public class XML {
                         xmlGraph.addUser(user); // May set user = null
                     case "</post>" ->
                         user.addPost(post); // May set post = null
-                    }
+                }
                 s.pop();
             } else if (isTag(item)); else {
                 switch (s.peek()) {
                     case "<id>" -> {
-                        String str = s.peek();
-                        s.pop();
-                        if (s.peek().equals("<follower>")) {
-                            user.addFollower(item);
-                        } else {
-                            user.setId(item);
+                        int index = Integer.parseInt(item) - min; // Calculate index to access dummy
+                        s.pop(); // Pop ID tag from stack top
+                        if (s.peek().equals("<follower>")) {  // Current ID belogs to a follower
+                            if (dummy[index] == null) { // If we haven't met this follower before
+                                dummy[index] = new User(); // Add this follower to dummy list
+                            }
+                            dummy[index].incFollows(); // Increment the follower's follows by one
+                            user.addFollower(dummy[index]); // Add this follower to followers list of current user
+                        } else { // Current ID belogs to a user
+                            if (dummy[index] == null) { // If we haven't met this user before
+                                user = new User(); // Set this user as current user
+                                dummy[index] = user; // Add this user to dummy list
+                            } else { // We mit this user before
+                                user = dummy[index]; // Set this user as current user from dummy list
+                            }
+                            user.setId(item); // Set the ID of the current user
                         }
-                        s.push(str);
+                        s.push("<id>"); // Push the ID tag again
                     }
                     case "<name>" ->
-                        user.setName(item);
+                        user.setName(item); // Set the name of the current user
                     case "<body>" ->
-                        post.setBody(item);
+                        post.setBody(item); // Set the post body to Post object
                     case "<topic>" ->
-                        post.addTopic(item);
+                        post.addTopic(item); // Add the post topic to Post object topics list
                 }
             }
         }
     }
-    //check if passed openning and closing tags match
 
+    // O(n), n is the number of users
+    User getMostActive() {
+        User mostActive = xmlGraph.getUsers().get(0);
+        int maxFollows = mostActive.getFollows() + mostActive.getFollowers().size();
+        for (User user : xmlGraph.getUsers()) {
+            if (user.getFollows() + user.getFollowers().size() > maxFollows) {
+                maxFollows = user.getFollows() + user.getFollowers().size();
+                mostActive = user;
+            }
+        }
+        return mostActive;
+    }
+
+    // O(n), n is the number of users
+    User getMostInfluencer() {
+        User mostInfluencer = xmlGraph.getUsers().get(0);
+        int maxFollowers = mostInfluencer.getFollowers().size();
+        for (User user : xmlGraph.getUsers()) {
+            if (user.getFollowers().size() > maxFollowers) {
+                maxFollowers = user.getFollowers().size();
+                mostInfluencer = user;
+            }
+        }
+        return mostInfluencer;
+    }
+
+    // O(n), n is the length of the XML file
+    void setMaxAndMinIds() {
+        for (int i = 0; i < slicedXML.size(); i++) {
+            if (slicedXML.get(i).equals("<id>")) {
+                int val = Integer.parseInt(slicedXML.get(i + 1));
+                min = (val < min) ? val : min;
+                max = (val > max) ? val : max;
+            }
+        }
+    }
+    
+    
+    //check if passed openning and closing tags match
     private boolean arePairedTags(String openningTag, String closingTag) {
         return removeAngleBrackets(openningTag).equals(closingTag.substring(2, closingTag.length() - 1));
     }
