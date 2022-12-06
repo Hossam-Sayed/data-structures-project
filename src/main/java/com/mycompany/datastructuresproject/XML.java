@@ -66,7 +66,8 @@ public class XML {
         for (int i = 0; i < xmlchars.length; i++) {
             if (!inTag) {
                 switch (xmlchars[i]) {
-                    case '\n' -> line++;
+                    case '\n' ->
+                        line++;
                     case '<' -> {
                         inTag = true;
                         tag = "<";
@@ -76,7 +77,24 @@ public class XML {
                 tag += xmlchars[i];
                 if (xmlchars[i] == '>') {
                     if (isOpeningTag(tag)) {
+                        if (!opennedTags.empty() && canContain(opennedTags.peek()) <= canContain(tag)) {
+                            errors.add("Line " + line + ": Tag " + opennedTags.pop()
+                                    + " must be closed before openning " + tag + " tag");
+                        }
                         opennedTags.push(tag);
+                        if (canContain(tag) > 0) {
+                            int j = i + 1;
+                            while (j < xmlchars.length
+                                    && (xmlchars[j] == '\n' || xmlchars[j] == ' '
+                                    || xmlchars[j] == '\t')) {
+                                j++;
+                            }
+                            if (xmlchars[j] != '<') {
+                                errors.add("Line " + line + ": Tag " + tag
+                                        + " cannot contain attribute value ");
+                            }
+                            i = j - 1;
+                        }
                     } else if (isClosingTag(tag) && arePairedTags(opennedTags.peek(), tag)) {
                         opennedTags.pop();
                     } else if (isClosingTag(tag) && !arePairedTags(opennedTags.peek(), tag)) {
@@ -112,21 +130,33 @@ public class XML {
         }
     }
 
-    /*private static int tagLevel(String t) {
+    private static int canContain(String t) {
         switch (t) {
-            case "<users>" , "</users>":
+            case "<id>" , "</id>" , "<name>" , "</name>" ,"<body>" , "</body>" , "<topic>", "</topic>" -> {
                 return 0;
-            case "<user>" , "</user>":
+            }
+            case "<topics>" , "</topics>", "<follower>", "</follower>" -> {
                 return 1;
-            case "<id>" , "</id>" , "<name>" , "</name>" , "<posts>", "</posts>",
-                    "<followers>", "</followers>":
+            }
+            case "<followers>", "</followers>" -> {
                 return 2;
-            case "<post>","<follower>", "</post>", "</follower>":
+            }
+            case "<post>", "</post>" -> {
                 return 3;
-
+            }
+            case "<posts>", "</posts>" -> {
+                return 4;
+            }
+            case "<user>" , "</user>" -> {
+                return 5;
+            }
+            case "<users>" , "</users>" -> {
+                return 6;
+            }
         }
-    }*/
-    
+        return -1;
+    }
+
     //O(n), where n is the number of char in xml file
     void sliceXML() {
         boolean inValue = false;
@@ -165,7 +195,7 @@ public class XML {
         }
         this.sliced = true;
     }
-    
+
     //O(n), where n is the number of slices in slicedXML
     String minifyXML() {
         if (!sliced) {
@@ -299,8 +329,7 @@ public class XML {
             }
         }
     }
-    
-    
+
     //check if passed openning and closing tags match
     private boolean arePairedTags(String openningTag, String closingTag) {
         return removeAngleBrackets(openningTag).equals(closingTag.substring(2, closingTag.length() - 1));
@@ -333,6 +362,8 @@ public class XML {
             for (String s : errors) {
                 System.out.println(s);
             }
-        }else System.out.println("no errors");
+        } else {
+            System.out.println("no errors");
+        }
     }
 }
