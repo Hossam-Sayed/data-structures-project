@@ -17,6 +17,7 @@ public class XML {
     private Tree xmlTree;
     private Graph xmlGraph;
 
+    //O(n), where n is the number of char in xml file
     XML(File file) {
         BufferedReader reader;
         try {
@@ -34,7 +35,6 @@ public class XML {
 
             reader.close();
         } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -42,6 +42,91 @@ public class XML {
         this.xml = s;
     }
 
+    //O(getErrors) = O(n), Same as order of getErrors
+    boolean isValid() {
+        if (valid) {
+            return true;
+        }
+        ArrayList<String> errors = getErrors();
+        if (errors == null) {
+            valid = true;
+            return true;
+        }
+        return false;
+    }
+
+    ArrayList<String> getErrors() {
+        ArrayList<String> errors = new ArrayList<>();
+        Stack<String> opennedTags = new Stack<>();
+        boolean inTag = false;
+        int line = 1;
+        String tag = "";
+        char[] xmlchars = xml.toCharArray();
+        for (int i = 0; i < xmlchars.length; i++) {
+            if (!inTag) {
+                switch (xmlchars[i]) {
+                    case '\n' -> line++;
+                    case '<' -> {
+                        inTag = true;
+                        tag = "<";
+                    }
+                }
+            } else if (inTag) {
+                tag += xmlchars[i];
+                if (xmlchars[i] == '>') {
+                    if (isOpeningTag(tag)) {
+                        opennedTags.push(tag);
+                    } else if (isClosingTag(tag) && arePairedTags(opennedTags.peek(), tag)) {
+                        opennedTags.pop();
+                    } else if (isClosingTag(tag) && !arePairedTags(opennedTags.peek(), tag)) {
+                        Stack<String> unclosedtags = new Stack<>();
+                        while (!opennedTags.empty() && !arePairedTags(opennedTags.peek(), tag)) {
+                            unclosedtags.push(opennedTags.pop());
+                        }
+                        if (opennedTags.empty()) {
+                            errors.add("Line " + line + ": No openning tag for closing tag " + tag);
+                            while (!unclosedtags.empty()) {
+                                opennedTags.push(unclosedtags.pop());
+                            }
+                        } else {
+                            while (!unclosedtags.empty()) {
+                                errors.add("Line " + line + ": Expected closing tag for " + unclosedtags.pop()
+                                        + " before closing tag " + tag);
+                            }
+                            opennedTags.pop();
+                        }
+                    }
+                    inTag = false;
+                    tag = "";
+                }
+            }
+        }
+        if (!opennedTags.empty()) {
+            errors.add("Expected closing tag for " + opennedTags.pop() + " before the end of the file");
+        }
+        if (errors.isEmpty()) {
+            return null;
+        } else {
+            return errors;
+        }
+    }
+
+    /*private static int tagLevel(String t) {
+        switch (t) {
+            case "<users>" , "</users>":
+                return 0;
+            case "<user>" , "</user>":
+                return 1;
+            case "<id>" , "</id>" , "<name>" , "</name>" , "<posts>", "</posts>",
+                    "<followers>", "</followers>":
+                return 2;
+            case "<post>","<follower>", "</post>", "</follower>":
+                return 3;
+
+        }
+    }*/
+    
+    //O(n), where n is the number of char in xml file
     void sliceXML() {
         boolean inValue = false;
         String currentLeafTag = null;
@@ -73,30 +158,13 @@ public class XML {
                 slicedXML.add(s);
                 s = "";
                 inValue = false;
-            } //these commented else if replaces the above else if, if the XML attribute value can contain <,>.
-            /*else if (i + 1 < xmlchars.length
-                    && inValue && xmlchars[i] == '<' && xmlchars[i + 1] == '/') {//check if char '<' is inside the data or start of the closing tag
-                int j = 2; //2 to skip "</" and start checking the tagname
-                //currentLeafTag.charAt(j - 1) the -1 because it doesn't contain '/'
-                while (j - 1 < currentLeafTag.length() && currentLeafTag.charAt(j - 1) == xmlchars[i + j]) {
-                    j++;
-                }
-                //if we reached the end if LeafTag then the two tags matches, check for '>' char
-                if (j - 1 == currentLeafTag.length()) {
-                    slicedXML.add(s);
-                    s = "";
-                    inValue = false;
-                    //decrement i to avoid skipping the '<'
-                    i--;
-                }else{ //Normal case : add char to the slice string, '<' is inside the data not a start of the tag
-                    s += xmlchars[i];
-                }
-            }*/ else { //normal case: add char to the slice string,
+            } else { //normal case: add char to the slice string,
                 s += xmlchars[i];
             }
         }
+        this.sliced = true;
     }
-    
+
     void xmlToTree() {
         if (!valid || !sliced) {
             return;
@@ -123,6 +191,18 @@ public class XML {
         }
     }
 
+    //O(n), where n is the number of slices in slicedXML
+    String minifyXML() {
+        if (!sliced) {
+            sliceXML();
+        }
+        String minified = "";
+        for (String s : slicedXML) {
+            minified += s;
+        }
+        return minified;
+    }
+
     void xmlToGraph() {
         if (!valid || !sliced) {
             return;
@@ -146,7 +226,7 @@ public class XML {
                         xmlGraph.addUser(user); // May set user = null
                     case "</post>" ->
                         user.addPost(post); // May set post = null
-                }
+                    }
                 s.pop();
             } else if (isTag(item)); else {
                 switch (s.peek()) {
@@ -170,6 +250,11 @@ public class XML {
             }
         }
     }
+    //check if passed openning and closing tags match
+
+    private boolean arePairedTags(String openningTag, String closingTag) {
+        return removeAngleBrackets(openningTag).equals(closingTag.substring(2, closingTag.length() - 1));
+    }
 
     private boolean isOpeningTag(String str) {
         return (isTag(str) // It is a tag
@@ -192,10 +277,12 @@ public class XML {
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
-        XML xml = new XML(new File("sample.xml"));
-        xml.sliceXML();
-        for (String s : xml.slicedXML) {
-            System.out.println(s);
-        }
+        XML xml = new XML(new File("sample with errors.xml"));
+        ArrayList<String> errors = xml.getErrors();
+        if (errors != null) {
+            for (String s : errors) {
+                System.out.println(s);
+            }
+        }else System.out.println("no errors");
     }
 }
