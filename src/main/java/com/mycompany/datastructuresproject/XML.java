@@ -43,22 +43,25 @@ public class XML {
         this.xml = s;
     }
 
+    void fixErrors() {
+        getErrors(true);
+    }
+
     //O(getErrors) = O(n), Same as order of getErrors
     boolean isValid() {
         if (valid) {
             return true;
         }
-        ArrayList<String> errors = getErrors();
-        if (errors == null) {
-            valid = true;
-            return true;
-        }
-        return false;
+        ArrayList<String> errors = getErrors(false);
+        valid = errors == null ? true : valid;
+        return errors == null;
     }
 
-    ArrayList<String> getErrors() {
+    ArrayList<String> getErrors(boolean fix) {
         ArrayList<String> errors = new ArrayList<>();
         Stack<String> opennedTags = new Stack<>();
+        String fixedXML = fix ? xml : null;
+        int addedLines = 0;
         boolean inTag = false;
         int line = 1;
         String tag = "";
@@ -72,6 +75,20 @@ public class XML {
                         inTag = true;
                         tag = "<";
                     }
+                    default -> {
+                        if (!(xmlchars[i] == ' ' || xmlchars[i] == '\t')
+                                && (opennedTags.empty() || canContain(opennedTags.peek()) > 0)) {
+                            if (opennedTags.empty()) {
+                                errors.add("Line " + line + ": Attribute value outside tags");
+                            } else {
+                                errors.add("Line " + line + ": Tag " + opennedTags.peek()
+                                        + " cannot contain attribute value ");
+                            }
+                            while (!(xmlchars[i + 1] == '\n' || xmlchars[i + 1] == '<')) {
+                                i++;
+                            }
+                        }
+                    }
                 }
             } else if (inTag) {
                 tag += xmlchars[i];
@@ -82,22 +99,9 @@ public class XML {
                                     + " must be closed before openning " + tag + " tag");
                         }
                         opennedTags.push(tag);
-                        if (canContain(tag) > 0) {
-                            int j = i + 1;
-                            while (j < xmlchars.length
-                                    && (xmlchars[j] == '\n' || xmlchars[j] == ' '
-                                    || xmlchars[j] == '\t')) {
-                                j++;
-                            }
-                            if (xmlchars[j] != '<') {
-                                errors.add("Line " + line + ": Tag " + tag
-                                        + " cannot contain attribute value ");
-                            }
-                            i = j - 1;
-                        }
-                    } else if (isClosingTag(tag) && arePairedTags(opennedTags.peek(), tag)) {
+                    } else if (!opennedTags.empty() && isClosingTag(tag) && arePairedTags(opennedTags.peek(), tag)) {
                         opennedTags.pop();
-                    } else if (isClosingTag(tag) && !arePairedTags(opennedTags.peek(), tag)) {
+                    } else if (!opennedTags.empty() && isClosingTag(tag) && !arePairedTags(opennedTags.peek(), tag)) {
                         Stack<String> unclosedtags = new Stack<>();
                         while (!opennedTags.empty() && !arePairedTags(opennedTags.peek(), tag)) {
                             unclosedtags.push(opennedTags.pop());
@@ -123,11 +127,7 @@ public class XML {
         if (!opennedTags.empty()) {
             errors.add("Expected closing tag for " + opennedTags.pop() + " before the end of the file");
         }
-        if (errors.isEmpty()) {
-            return null;
-        } else {
-            return errors;
-        }
+        return errors.isEmpty() ? null : errors;
     }
 
     private static int canContain(String t) {
@@ -357,7 +357,7 @@ public class XML {
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
         XML xml = new XML(new File("sample with errors.xml"));
-        ArrayList<String> errors = xml.getErrors();
+        ArrayList<String> errors = xml.getErrors(false);
         if (errors != null) {
             for (String s : errors) {
                 System.out.println(s);
