@@ -293,6 +293,10 @@ public class XML {
         }
     }
 
+    void format(TreeNode node) {
+
+    }
+
     // O(n), n is the number of users
     User getMostActive() {
         User mostActive = xmlGraph.getUsers().get(0);
