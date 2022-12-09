@@ -9,6 +9,10 @@ public class Tree {
     public Tree(TreeNode root) {
         this.root = root;
     }
+
+    public TreeNode getRoot() {
+        return root;
+    }
 }
 
 class TreeNode {
@@ -21,7 +25,7 @@ class TreeNode {
         this.tagName = strTag;
         // If the node is a non-leaf tag in the tree (has children) create the arraylist
         switch (strTag) {
-            case "users", "user", "posts", "topics", "followers" ->
+            case "users", "user", "posts", "post", "topics", "followers", "follower" ->
                 children = new ArrayList<>();
         }
     }
@@ -33,4 +37,17 @@ class TreeNode {
     public void setData(String data) {
         this.data = data;
     }
+
+    public String getTagName() {
+        return tagName;
+    }
+
+    public ArrayList<TreeNode> getChildren() {
+        return children;
+    }
+
+    public String getData() {
+        return data;
+    }
+    
 }

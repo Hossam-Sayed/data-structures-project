@@ -329,8 +329,36 @@ public class XML {
         }
     }
 
-    void format(TreeNode node) {
+    String formatingNode(String str, TreeNode node) {
+        str += "<" + (node.getTagName()) + ">";
+        ArrayList<TreeNode> childrens = node.getChildren();
+        if (childrens != null) {
+            str += "\n\t";
+            for (int i = 0; i < childrens.size(); i++) {
+                str += formatingNode(str, childrens.get(i));
+            }
+        } else {
+            str += (node.getData());
+            str += "</";
+            str += (node.getTagName());
+            str += ">";
+        }
+        str += "\n</";
+        str += (node.getTagName());
+        str += ">";
+        return str;
+    }
 
+    void format() {
+        if (xmlTree == null) {
+            this.xmlToTree();
+        }
+        String str = "";
+        TreeNode node = xmlTree.getRoot();
+        if (node != null) {
+            str = formatingNode(str, node);
+        }
+        xml = str;
     }
 
     // O(n), n is the number of users
@@ -397,14 +425,10 @@ public class XML {
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
         XML xml = new XML(new File("sample with errors.xml"));
-        ArrayList<String> errors = xml.getErrors(true);
-        if (errors != null) {
-            for (String s : errors) {
-                System.out.println(s);
-            }
-        } else {
-            System.out.println("no errors");
+        if (xml.isValid()) {
+            xml.sliceXML();
+            xml.format();
+            System.out.println(xml.xml);
         }
-        System.out.println(xml.xml);
     }
 }
