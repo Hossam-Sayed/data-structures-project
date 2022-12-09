@@ -42,6 +42,7 @@ public class XML {
     XML(String s) {
         this.xml = s;
     }
+
     //O(getErrors)= O(n), Same as order of getErrors
     void fixErrors() {
         getErrors(true);
@@ -60,7 +61,7 @@ public class XML {
     ArrayList<String> getErrors(boolean fix) {
         ArrayList<String> errors = new ArrayList<>();
         Stack<String> opennedTags = new Stack<>();
-        String fixedXML = fix ? xml : "";
+        StringBuilder fixedXML = fix ? new StringBuilder(xml.length() * 2) : null;
         int addedchar = 0;
         boolean inTag = false;
         int line = 1;
@@ -69,8 +70,12 @@ public class XML {
         for (int i = 0; i < xmlchars.length; i++) {
             if (!inTag) {
                 switch (xmlchars[i]) {
-                    case '\n' ->
+                    case '\n' -> {
                         line++;
+                        if (fix) {
+                            fixedXML.append(xmlchars[i]);
+                        }
+                    }
                     case '<' -> {
                         inTag = true;
                         tag = "<";
@@ -84,13 +89,13 @@ public class XML {
                                 errors.add("Line " + line + ": Tag " + opennedTags.peek()
                                         + " cannot contain attribute value ");
                             }
-                            int start = i;
                             while (!(xmlchars[i + 1] == '\n' || xmlchars[i + 1] == '<')) {
                                 i++;
                             }
-                            int end = i + 1;
-                            fixedXML = fixByRemoving(fixedXML, start + addedchar, end + addedchar, fix);
-                            addedchar = fixedXML.length() - xml.length();
+                        } else {
+                            if (fix) {
+                                fixedXML.append(xmlchars[i]);
+                            }
                         }
                     }
                 }
@@ -101,12 +106,21 @@ public class XML {
                         while (!opennedTags.empty() && canContain(opennedTags.peek()) <= canContain(tag)) {
                             errors.add("Line " + line + ": Tag " + opennedTags.peek()
                                     + " must be closed before openning " + tag + " tag");
-                            fixedXML = fixByClosingTag(fixedXML, i - tag.length() + 1 + addedchar, opennedTags.pop(), fix);
-                            addedchar = fixedXML.length() - xml.length();
+                            if (fix) {
+                                fixedXML.append("</");
+                                fixedXML.append(opennedTags.peek().substring(1));
+                            }
+                            opennedTags.pop();
                         }
                         opennedTags.push(tag);
+                        if (fix) {
+                            fixedXML.append(tag);
+                        }
                     } else if (!opennedTags.empty() && isClosingTag(tag) && arePairedTags(opennedTags.peek(), tag)) {
                         opennedTags.pop();
+                        if (fix) {
+                            fixedXML.append(tag);
+                        }
                     } else if (!opennedTags.empty() && isClosingTag(tag) && !arePairedTags(opennedTags.peek(), tag)) {
                         Stack<String> unclosedtags = new Stack<>();
                         while (!opennedTags.empty() && !arePairedTags(opennedTags.peek(), tag)) {
@@ -114,8 +128,6 @@ public class XML {
                         }
                         if (opennedTags.empty()) {
                             errors.add("Line " + line + ": No openning tag for closing tag " + tag);
-                            fixedXML = fixByRemoving(fixedXML, i - tag.length() + 1 + addedchar, i + 1 + addedchar, fix);
-                            addedchar = fixedXML.length() - xml.length();
                             while (!unclosedtags.empty()) {
                                 opennedTags.push(unclosedtags.pop());
                             }
@@ -123,10 +135,16 @@ public class XML {
                             while (!unclosedtags.empty()) {
                                 errors.add("Line " + line + ": Expected closing tag for " + unclosedtags.peek()
                                         + " before closing tag " + tag);
-                                fixedXML = fixByClosingTag(fixedXML, i - tag.length() + 1 + addedchar, unclosedtags.pop(), fix);
-                                addedchar = fixedXML.length() - xml.length();
+                                if (fix) {
+                                    fixedXML.append("</");
+                                    fixedXML.append(unclosedtags.peek().substring(1));
+                                }
+                                unclosedtags.pop();
                             }
                             opennedTags.pop();
+                            if (fix) {
+                                fixedXML.append(tag);
+                            }
                         }
                     }
                     inTag = false;
@@ -136,10 +154,14 @@ public class XML {
         }
         while (!opennedTags.empty()) {
             errors.add("Expected closing tag for " + opennedTags.peek() + " before the end of the file");
-            fixedXML = fixByClosingTagAtEnd(fixedXML, opennedTags.pop(), fix);
+            if (fix) {
+                fixedXML.append("</");
+                fixedXML.append(opennedTags.peek().substring(1));
+            }
+            opennedTags.pop();
         }
-        if(fix){
-         this.xml = fixedXML;
+        if (fix) {
+            this.xml = fixedXML.toString();
         }
         return errors.isEmpty() ? null : errors;
     }
@@ -170,29 +192,6 @@ public class XML {
         }
         return -1;
     }
-
-    String fixByRemoving(String toFix, int start, int end, boolean fix) {
-        if (!fix) {
-            return toFix;
-        }
-        //start is removed, end is kept
-        return toFix.substring(0, start) + toFix.substring(end);
-    }
-
-    String fixByClosingTag(String toFix, int start, String tagToClose, boolean fix) {
-        if (!fix) {
-            return toFix;
-        }
-        return toFix.substring(0, start) + "</" + tagToClose.substring(1) + "\n" + toFix.substring(start);
-    }
-
-    String fixByClosingTagAtEnd(String toFix, String tagToClose, boolean fix) {
-        if (!fix) {
-            return toFix;
-        }
-        return toFix + "</" + tagToClose.substring(1) + "\n";
-    }
-
 
     //O(n), where n is the number of char in xml file
     void sliceXML() {
@@ -398,7 +397,7 @@ public class XML {
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
         XML xml = new XML(new File("sample with errors.xml"));
-        ArrayList<String> errors = xml.getErrors(false);
+        ArrayList<String> errors = xml.getErrors(true);
         if (errors != null) {
             for (String s : errors) {
                 System.out.println(s);
@@ -406,5 +405,6 @@ public class XML {
         } else {
             System.out.println("no errors");
         }
+        System.out.println(xml.xml);
     }
 }
