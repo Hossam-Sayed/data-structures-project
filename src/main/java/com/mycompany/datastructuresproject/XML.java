@@ -408,6 +408,7 @@ public class XML {
                         mutualFollowers.add(dummy[index]);
                     }
                 }
+                break;
             }
         }
 
