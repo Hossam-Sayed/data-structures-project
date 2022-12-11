@@ -361,7 +361,7 @@ public class XML {
             } else {
                 //System.out.println("The file already exists.");
             }
-            try (FileWriter output = new FileWriter("exportedxml.xml")) {
+            try ( FileWriter output = new FileWriter("exportedxml.xml")) {
                 output.write(xml);
             }
         } catch (Exception e) {
@@ -381,7 +381,7 @@ public class XML {
             } else {
                 //    System.out.println("The file already exists.");
             }
-            try (FileWriter output = new FileWriter("exportedjson.json")) {
+            try ( FileWriter output = new FileWriter("exportedjson.json")) {
                 output.write(json);
             }
         } catch (Exception e) {
@@ -394,9 +394,15 @@ public class XML {
         addition += str;
         addition += "\t";
         String strs = "";
+        String type = "";
         ArrayList<TreeNode> childrens = node.getChildren();
         if (childrens != null) {
-            strs += "\t\"" + (node.getTagName()) + "\":[";
+            if (childrens.get(0).getData() != null) {
+                type = "{";
+            } else {
+                type = "[";
+            }
+            strs += ("\t\"" + (node.getTagName()) + "\":" + type);
             for (int i = 0; i < childrens.size(); i++) {
                 strs += addition;
                 strs += jsonFormatingNode(addition, childrens.get(i));
@@ -412,7 +418,11 @@ public class XML {
         }
         strs += str;
         strs += "\t";
-        strs += "]";
+        if (type == "{") {
+            strs += "}";
+        } else {
+            strs += "]";
+        }
         return strs;
     }
 
@@ -518,7 +528,7 @@ public class XML {
     }
 
     private boolean isOpeningTag(String str) {
-        return (isTag(str) // It is a tag
+        return (isTag(str) // It is a tag^
                 && str.charAt(1) != '/' // Not a closed tag
                 && str.charAt(1) != '!' // Not a commnet
                 && str.charAt(1) != '?'); // Not a header
@@ -539,23 +549,23 @@ public class XML {
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
         XML xml = new XML(new File("sample with errors.xml"));
-        ArrayList<String> errors = xml.getErrors(true);
-        if (errors == null) {
-            System.out.println("no errors");
-        } else {
-            for (String s : errors) {
-                System.out.println(s);
-            }
-            System.out.println(xml.xml);
-        }
+//        ArrayList<String> errors = xml.getErrors(true);
+//        if (errors == null) {
+//            System.out.println("no errors");
+//        } else {
+//            for (String s : errors) {
+//                System.out.println(s);
+//            }
+//            System.out.println(xml.xml);
+//        }
 
-        /*if (xml.isValid()) {
+        if (xml.isValid()) {
             xml.sliceXML();
             xml.format();
             String ste = xml.xmlToJson();
             System.out.println(ste);
             // xml.str_to_xmlFile();
             xml.str_to_jsonFile(ste);
-        }*/
+        }
     }
 }

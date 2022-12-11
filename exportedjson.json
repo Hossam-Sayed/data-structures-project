@@ -1,65 +1,65 @@
 {
 	"users":[
-		"user":[
+		"user":{
 			"id": "1",
 			"name": "Ahmed Ali",
 			"posts":[
-				"post":[
+				"post":{
 					"body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-					"topics":[
+					"topics":{
 						"topic": "economy",
 						"topic": "finance",
-					]
-				]
-				"post":[
+					}
+				}
+				"post":{
 					"body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-					"topics":[
+					"topics":{
 						"topic": "solar_energy",
-					]
-				]
+					}
+				}
 			]
 			"followers":[
-				"follower":[
+				"follower":{
 					"id": "2",
-				]
-				"follower":[
+				}
+				"follower":{
 					"id": "3",
-				]
+				}
 			]
-		]
-		"user":[
+		}
+		"user":{
 			"id": "2",
 			"name": "Yasser Ahmed",
 			"posts":[
-				"post":[
+				"post":{
 					"body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-					"topics":[
+					"topics":{
 						"topic": "education",
-					]
-				]
+					}
+				}
 			]
 			"followers":[
-				"follower":[
+				"follower":{
 					"id": "1",
-				]
+				}
 			]
-		]
-		"user":[
+		}
+		"user":{
 			"id": "3",
 			"name": "Mohamed Sherif",
 			"posts":[
-				"post":[
+				"post":{
 					"body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-					"topics":[
+					"topics":{
 						"topic": "sports",
-					]
-				]
+					}
+				}
 			]
 			"followers":[
-				"follower":[
+				"follower":{
 					"id": "1",
-				]
+				}
 			]
-		]
+		}
 	]
 }
