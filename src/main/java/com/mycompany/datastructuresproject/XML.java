@@ -361,7 +361,6 @@ public class XML {
     void format() {
         if (xmlTree == null) {
             this.xmlToTree();
-            format();
         }
         String str = "";
         TreeNode node = xmlTree.getRoot();
@@ -409,6 +408,47 @@ public class XML {
         } catch (Exception e) {
             e.getStackTrace();
         }
+    }
+
+    String jsonFormatingNode(String str, TreeNode node) {
+        String addition = "";
+        addition += str;
+        addition += "\t";
+        String strs = "";
+        ArrayList<TreeNode> childrens = node.getChildren();
+        if (childrens != null) {
+        strs += "\t\"" + (node.getTagName()) + "\":[";
+            for (int i = 0; i < childrens.size(); i++) {
+                strs += addition;
+                strs += jsonFormatingNode(addition, childrens.get(i));
+            }
+        } else {
+            strs += "\t\"" + (node.getTagName()) + "\":";
+            //strs += (addition + "\t");
+            strs += (" \"" + node.getData() + "\"");
+            //strs += str;
+            //strs += "\t";
+            strs += ",";
+            return strs;
+        }
+        strs += str;
+        strs += "\t";
+        strs += "]";
+        return strs;
+    }
+
+    String xmlToJson() {
+        if (xmlTree == null) {
+            this.xmlToTree();
+            //  xmlToJson();
+        }
+        String str = "{\n";
+        TreeNode node = xmlTree.getRoot();
+        if (node != null) {
+            str += jsonFormatingNode("\n", node);
+        }
+        str += "\n}";
+        return str;
     }
 
     // O(n), n is the number of users
@@ -523,8 +563,10 @@ public class XML {
         if (xml.isValid()) {
             xml.sliceXML();
             xml.format();
-            //    System.out.println(xml.xml);
-            xml.str_to_xmlFile();
+            String ste = xml.xmlToJson();
+            System.out.println(ste);
+            // xml.str_to_xmlFile();
+            xml.str_to_jsonFile(ste);
         }
     }
 }
