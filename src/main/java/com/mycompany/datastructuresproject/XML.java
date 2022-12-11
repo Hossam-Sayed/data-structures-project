@@ -44,12 +44,10 @@ public class XML {
         this.xml = s;
     }
 
-    //O(getErrors)= O(n), Same as order of getErrors
     void fixErrors() {
         getErrors(true);
     }
 
-    //O(getErrors) = O(n), Same as order of getErrors
     boolean isValid() {
         if (valid) {
             return true;
@@ -65,6 +63,7 @@ public class XML {
         StringBuilder fixedXML = fix ? new StringBuilder(xml.length() * 2) : null;
         int addedchar = 0;
         boolean inTag = false;
+        boolean hasValue = false;
         int line = 1;
         String tag = "";
         char[] xmlchars = xml.toCharArray();
@@ -82,16 +81,18 @@ public class XML {
                         tag = "<";
                     }
                     default -> {
-                        if (!(xmlchars[i] == ' ' || xmlchars[i] == '\t')
-                                && (opennedTags.empty() || canContain(opennedTags.peek()) > 0)) {
+                        if (!(xmlchars[i] == ' ' || xmlchars[i] == '\t')) {
                             if (opennedTags.empty()) {
-                                errors.add("Line " + line + ": Attribute value outside tags");
+                                errors.add("Line " + line + ": Attribute value with no opened tags");
                             } else {
-                                errors.add("Line " + line + ": Tag " + opennedTags.peek()
-                                        + " cannot contain attribute value ");
-                            }
-                            while (!(xmlchars[i + 1] == '\n' || xmlchars[i + 1] == '<')) {
-                                i++;
+                                hasValue = true;
+                                while (i < xmlchars.length && !(xmlchars[i] == '\n' || xmlchars[i] == '<')) {
+                                    if (fix) {
+                                        fixedXML.append(xmlchars[i]);
+                                    }
+                                    i++;
+                                }
+                                i--;
                             }
                         } else {
                             if (fix) {
@@ -104,47 +105,52 @@ public class XML {
                 tag += xmlchars[i];
                 if (xmlchars[i] == '>') {
                     if (isOpeningTag(tag)) {
-                        while (!opennedTags.empty() && canContain(opennedTags.peek()) <= canContain(tag)) {
+                        if (!opennedTags.empty() && hasValue) {
                             errors.add("Line " + line + ": Tag " + opennedTags.peek()
-                                    + " must be closed before openning " + tag + " tag");
+                                    + " must be closed before openning " + tag
+                                    + " tag, as " + opennedTags.peek() + " has attribute value");
                             if (fix) {
                                 fixedXML.append("</");
                                 fixedXML.append(opennedTags.peek().substring(1));
                             }
                             opennedTags.pop();
+                            hasValue = false;
                         }
                         opennedTags.push(tag);
                         if (fix) {
                             fixedXML.append(tag);
                         }
-                    } else if (!opennedTags.empty() && isClosingTag(tag) && arePairedTags(opennedTags.peek(), tag)) {
-                        opennedTags.pop();
-                        if (fix) {
-                            fixedXML.append(tag);
-                        }
-                    } else if (!opennedTags.empty() && isClosingTag(tag) && !arePairedTags(opennedTags.peek(), tag)) {
-                        Stack<String> unclosedtags = new Stack<>();
-                        while (!opennedTags.empty() && !arePairedTags(opennedTags.peek(), tag)) {
-                            unclosedtags.push(opennedTags.pop());
-                        }
-                        if (opennedTags.empty()) {
-                            errors.add("Line " + line + ": No openning tag for closing tag " + tag);
-                            while (!unclosedtags.empty()) {
-                                opennedTags.push(unclosedtags.pop());
-                            }
-                        } else {
-                            while (!unclosedtags.empty()) {
-                                errors.add("Line " + line + ": Expected closing tag for " + unclosedtags.peek()
-                                        + " before closing tag " + tag);
-                                if (fix) {
-                                    fixedXML.append("</");
-                                    fixedXML.append(unclosedtags.peek().substring(1));
-                                }
-                                unclosedtags.pop();
-                            }
+                    } else if (isClosingTag(tag)) {
+                        if (!opennedTags.empty() && arePairedTags(opennedTags.peek(), tag)) {
                             opennedTags.pop();
+                            hasValue = false;
                             if (fix) {
                                 fixedXML.append(tag);
+                            }
+                        } else if (!opennedTags.empty() && !arePairedTags(opennedTags.peek(), tag)) {
+                            Stack<String> unclosedtags = new Stack<>();
+                            while (!opennedTags.empty() && !arePairedTags(opennedTags.peek(), tag)) {
+                                unclosedtags.push(opennedTags.pop());
+                            }
+                            if (opennedTags.empty()) {
+                                errors.add("Line " + line + ": No openning tag for closing tag " + tag);
+                                while (!unclosedtags.empty()) {
+                                    opennedTags.push(unclosedtags.pop());
+                                }
+                            } else {
+                                while (!unclosedtags.empty()) {
+                                    errors.add("Line " + line + ": Expected closing tag for " + unclosedtags.peek()
+                                            + " before closing tag " + tag);
+                                    if (fix) {
+                                        fixedXML.append("</");
+                                        fixedXML.append(unclosedtags.peek().substring(1));
+                                    }
+                                    unclosedtags.pop();
+                                }
+                                opennedTags.pop();
+                                if (fix) {
+                                    fixedXML.append(tag);
+                                }
                             }
                         }
                     }
@@ -165,33 +171,6 @@ public class XML {
             this.xml = fixedXML.toString();
         }
         return errors.isEmpty() ? null : errors;
-    }
-
-    private static int canContain(String t) {
-        switch (t) {
-            case "<id>", "</id>", "<name>", "</name>", "<body>", "</body>", "<topic>", "</topic>" -> {
-                return 0;
-            }
-            case "<topics>", "</topics>", "<follower>", "</follower>" -> {
-                return 1;
-            }
-            case "<followers>", "</followers>" -> {
-                return 2;
-            }
-            case "<post>", "</post>" -> {
-                return 3;
-            }
-            case "<posts>", "</posts>" -> {
-                return 4;
-            }
-            case "<user>", "</user>" -> {
-                return 5;
-            }
-            case "<users>", "</users>" -> {
-                return 6;
-            }
-        }
-        return -1;
     }
 
     //O(n), where n is the number of char in xml file
@@ -382,7 +361,7 @@ public class XML {
             } else {
                 //System.out.println("The file already exists.");
             }
-            try ( FileWriter output = new FileWriter("exportedxml.xml")) {
+            try (FileWriter output = new FileWriter("exportedxml.xml")) {
                 output.write(xml);
             }
         } catch (Exception e) {
@@ -402,7 +381,7 @@ public class XML {
             } else {
                 //    System.out.println("The file already exists.");
             }
-            try ( FileWriter output = new FileWriter("exportedjson.json")) {
+            try (FileWriter output = new FileWriter("exportedjson.json")) {
                 output.write(json);
             }
         } catch (Exception e) {
@@ -417,7 +396,7 @@ public class XML {
         String strs = "";
         ArrayList<TreeNode> childrens = node.getChildren();
         if (childrens != null) {
-        strs += "\t\"" + (node.getTagName()) + "\":[";
+            strs += "\t\"" + (node.getTagName()) + "\":[";
             for (int i = 0; i < childrens.size(); i++) {
                 strs += addition;
                 strs += jsonFormatingNode(addition, childrens.get(i));
@@ -560,13 +539,23 @@ public class XML {
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
         XML xml = new XML(new File("sample with errors.xml"));
-        if (xml.isValid()) {
+        ArrayList<String> errors = xml.getErrors(true);
+        if (errors == null) {
+            System.out.println("no errors");
+        } else {
+            for (String s : errors) {
+                System.out.println(s);
+            }
+            System.out.println(xml.xml);
+        }
+
+        /*if (xml.isValid()) {
             xml.sliceXML();
             xml.format();
             String ste = xml.xmlToJson();
             System.out.println(ste);
             // xml.str_to_xmlFile();
             xml.str_to_jsonFile(ste);
-        }
+        }*/
     }
 }
