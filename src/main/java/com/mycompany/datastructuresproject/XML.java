@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Stack;
@@ -330,35 +331,84 @@ public class XML {
     }
 
     String formatingNode(String str, TreeNode node) {
-        str += "<" + (node.getTagName()) + ">";
+        String addition = "";
+        addition += str;
+        addition += "\t";
+        String strs = "";
+        strs += "<" + (node.getTagName()) + ">";
         ArrayList<TreeNode> childrens = node.getChildren();
         if (childrens != null) {
-            str += "\n\t";
             for (int i = 0; i < childrens.size(); i++) {
-                str += formatingNode(str, childrens.get(i));
+                strs += addition;
+                strs += formatingNode(addition, childrens.get(i));
             }
         } else {
-            str += (node.getData());
-            str += "</";
-            str += (node.getTagName());
-            str += ">";
+            strs += (addition);
+            strs += (node.getData());
+            strs += str;
+            strs += "</";
+            strs += (node.getTagName());
+            strs += ">";
+            return strs;
         }
-        str += "\n</";
-        str += (node.getTagName());
-        str += ">";
-        return str;
+        strs += str;
+        strs += "</";
+        strs += (node.getTagName());
+        strs += ">";
+        return strs;
     }
 
     void format() {
         if (xmlTree == null) {
             this.xmlToTree();
+            format();
         }
         String str = "";
         TreeNode node = xmlTree.getRoot();
         if (node != null) {
-            str = formatingNode(str, node);
+            str = formatingNode("\n", node);
         }
         xml = str;
+    }
+
+    void str_to_xmlFile() {
+        // create a file object for the current location
+        File file = new File("exportedxml.xml");
+        try {
+            // create a new file with name specified
+            // by the file object
+            boolean value = file.createNewFile();
+            if (value) {
+                //System.out.println("New Java File is created.");
+            } else {
+                //System.out.println("The file already exists.");
+            }
+            try ( FileWriter output = new FileWriter("exportedxml.xml")) {
+                output.write(xml);
+            }
+        } catch (Exception e) {
+            e.getStackTrace();
+        }
+    }
+
+    void str_to_jsonFile(String json) {
+        // create a file object for the current location
+        File file = new File("exportedjson.json");
+        try {
+            // create a new file with name specified
+            // by the file object
+            boolean value = file.createNewFile();
+            if (value) {
+                //    System.out.println("New Java File is created.");
+            } else {
+                //    System.out.println("The file already exists.");
+            }
+            try ( FileWriter output = new FileWriter("exportedjson.json")) {
+                output.write(json);
+            }
+        } catch (Exception e) {
+            e.getStackTrace();
+        }
     }
 
     // O(n), n is the number of users
@@ -473,7 +523,8 @@ public class XML {
         if (xml.isValid()) {
             xml.sliceXML();
             xml.format();
-            System.out.println(xml.xml);
+            //    System.out.println(xml.xml);
+            xml.str_to_xmlFile();
         }
     }
 }
