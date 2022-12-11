@@ -387,6 +387,50 @@ public class XML {
         return mostInfluencer;
     }
 
+    // O(n), n is the number of users in the graph
+    public ArrayList<User> getMutualFollowers(String id1, String id2) {
+        ArrayList<User> mutualFollowers = new ArrayList<>();
+        User dummy[] = new User[max - min + 1];
+        for (User user : xmlGraph.getUsers()) {
+            if (user.getId().equals(id1)) {
+                for (User follower : user.getFollowers()) {
+                    int index = Integer.parseInt(follower.getId()) - min;
+                    dummy[index] = follower;
+                }
+                break;
+            }
+        }
+        for (User user : xmlGraph.getUsers()) {
+            if (user.getId().equals(id2)) {
+                for (User follower : user.getFollowers()) {
+                    int index = Integer.parseInt(follower.getId()) - min;
+                    if (dummy[index] != null) {
+                        mutualFollowers.add(dummy[index]);
+                    }
+                }
+            }
+        }
+
+        return (mutualFollowers.isEmpty()) ? null : mutualFollowers;
+    }
+
+    // O(n), n is the maximum number of followers for any user (number of users in the graph - 1)
+    public ArrayList<User> getMutualFollowers(User user1, User user2) {
+        ArrayList<User> mutualFollowers = new ArrayList<>();
+        User dummy[] = new User[max - min + 1];
+        for (User follower : user1.getFollowers()) {
+            int index = Integer.parseInt(follower.getId()) - min;
+            dummy[index] = follower;
+        }
+        for (User follower : user2.getFollowers()) {
+            int index = Integer.parseInt(follower.getId()) - min;
+            if (dummy[index] != null) {
+                mutualFollowers.add(dummy[index]);
+            }
+        }
+        return (mutualFollowers.isEmpty()) ? null : mutualFollowers;
+    }
+
     // O(n), n is the length of the XML file
     void setMaxAndMinIds() {
         for (int i = 0; i < slicedXML.size(); i++) {

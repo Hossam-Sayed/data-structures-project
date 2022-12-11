@@ -55,6 +55,10 @@ class User {
     public ArrayList<User> getFollowers() {
         return followers;
     }
+
+    public String getId() {
+        return id;
+    }
 }
 
 class Post {
