@@ -22,19 +22,17 @@ public class XML {
     //O(n), where n is the number of char in xml file
     XML(File file) {
         BufferedReader reader;
+        StringBuilder xml = new StringBuilder();
         try {
             reader = new BufferedReader(new FileReader(file));
             String line = reader.readLine();
-            xml = "";
             while (line != null) {
-                if (xml.equals("")) {
-                    xml = line;
-                } else {
-                    xml = xml + "\n" + line;
-                }
+                xml.append(line);
+                xml.append("\n");
                 line = reader.readLine();
             }
-
+            xml.deleteCharAt(xml.length() - 1);
+            this.xml = xml.toString();
             reader.close();
         } catch (IOException e) {
         }
@@ -42,6 +40,10 @@ public class XML {
 
     XML(String s) {
         this.xml = s;
+    }
+
+    void compress() {
+        Compression.compress(this.minifyXML());
     }
 
     void fixErrors() {
@@ -179,16 +181,16 @@ public class XML {
         String currentLeafTag = null;
         slicedXML = new ArrayList<String>();
         char[] xmlchars = xml.toCharArray();
-        String s = "";
+        StringBuilder s = new StringBuilder();
         for (int i = 0; i < xmlchars.length; i++) {
             if (xmlchars[i] == '\n') { //slice when you find a new line (made to terminate data)
                 inValue = false;
-                slicedXML.add(s);
-                s = "";
+                slicedXML.add(s.toString());
+                s = new StringBuilder();
             } else if (!inValue && xmlchars[i] == '>') { //slice when you find an ending of a tag
-                s += xmlchars[i];
-                slicedXML.add(s);
-                s = "";
+                s.append(xmlchars[i]);
+                slicedXML.add(s.toString());
+                s = new StringBuilder();
                 //skip white spaces after the tag
                 while (i + 1 < xmlchars.length
                         && (xmlchars[i + 1] == '\n' || xmlchars[i + 1] == ' ' || xmlchars[i + 1] == '\t')) {
@@ -201,12 +203,12 @@ public class XML {
                 }
             } else if (!inValue && (xmlchars[i] == ' ' || xmlchars[i] == '\t')) {//Skip white spaces outside values
             } else if (inValue && xmlchars[i + 1] == '<') { //slice before the closing tag
-                s += xmlchars[i];
-                slicedXML.add(s);
-                s = "";
+                s.append(xmlchars[i]);
+                slicedXML.add(s.toString());
+                s = new StringBuilder();
                 inValue = false;
             } else { //normal case: add char to the slice string,
-                s += xmlchars[i];
+                s.append(xmlchars[i]);
             }
         }
         this.sliced = true;
@@ -217,11 +219,11 @@ public class XML {
         if (!sliced) {
             sliceXML();
         }
-        String minified = "";
+        StringBuilder minified = new StringBuilder();
         for (String s : slicedXML) {
-            minified += s;
+            minified.append(s);
         }
-        return minified;
+        return minified.toString();
     }
 
     // O(n), n is the length of the XML file
@@ -361,7 +363,7 @@ public class XML {
             } else {
                 //System.out.println("The file already exists.");
             }
-            try ( FileWriter output = new FileWriter("exportedxml.xml")) {
+            try (FileWriter output = new FileWriter("exportedxml.xml")) {
                 output.write(xml);
             }
         } catch (Exception e) {
@@ -381,7 +383,7 @@ public class XML {
             } else {
                 //    System.out.println("The file already exists.");
             }
-            try ( FileWriter output = new FileWriter("exportedjson.json")) {
+            try (FileWriter output = new FileWriter("exportedjson.json")) {
                 output.write(json);
             }
         } catch (Exception e) {
@@ -548,7 +550,8 @@ public class XML {
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
-        XML xml = new XML(new File("sample with errors.xml"));
+        XML xml = new XML(new File("Big Big xml.xml"));
+        //System.out.println(xml.xml);
 //        ArrayList<String> errors = xml.getErrors(true);
 //        if (errors == null) {
 //            System.out.println("no errors");
@@ -556,16 +559,15 @@ public class XML {
 //            for (String s : errors) {
 //                System.out.println(s);
 //            }
-//            System.out.println(xml.xml);
 //        }
 
-        if (xml.isValid()) {
+        /*if (xml.isValid()) {
             xml.sliceXML();
             xml.format();
             String ste = xml.xmlToJson();
             System.out.println(ste);
             // xml.str_to_xmlFile();
             xml.str_to_jsonFile(ste);
-        }
+        }*/
     }
 }
