@@ -1,20 +1,25 @@
 package com.mycompany.datastructuresproject;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.util.ArrayList;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.Comparator;
 import java.util.PriorityQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Compression {
 
-    static String coddedString(String[] charCodes, String toCode) {
+    static String encodeToBinaryString(String[] charCodes, String toCode) {
         StringBuilder code = new StringBuilder();
         for (int i = 0; i < toCode.length(); i++) {
             code.append(charCodes[toCode.charAt(i)]);
         }
         //add padding to make the code multiple of 8 (can be converted to bytes)
         int padding = 8 - code.length() % 8;
+        padding = padding == 8 ? 0 : padding;
         for (int i = 0; i < padding; i++) {
             code.append('1');
         }
@@ -23,48 +28,108 @@ public class Compression {
         return codewithpadding.toString();
     }
 
-    static String coddedStringToBytes(String coddedString) {
-        StringBuilder bytesToStore = new StringBuilder();
-        bytesToStore.append(coddedString.charAt(0));
-        char[] c = coddedString.toCharArray();
+    static byte[] binaryStringToBytes(String binaryString) {
+        int size = 1 + (binaryString.length() - 1) / 8;
+        byte[] bytes = new byte[size];
+        bytes[0] = (byte) binaryString.charAt(0);
+        int stored = 1;
+        char[] c = binaryString.toCharArray();
         for (int i = 1; i < c.length; i += 8) {
-            char b = 0;
+            byte b = 0;
             int weight = 128;
             for (int j = 0; j < 8; j++) {
                 b += (c[i + j] - '0') * weight;
                 weight /= 2;
             }
-            bytesToStore.append(b);
+            bytes[stored] = b;
+            stored++;
+        }
+        return bytes;
+    }
+
+    static void writeToFile(byte[] compressedBytes) {
+        // create a file object for the current location
+        OutputStream os;
+        try {
+            os = new FileOutputStream("compressedFile.txt");
+            //illustrating write(byte[] b) method
+            os.write(compressedBytes);
+
+            //illustrating flush() method
+            os.flush();
+        } catch (IOException ex) {
+            Logger.getLogger(Compression.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    static byte[] readFromFile(File file) {
+        byte[] fileContent = null;
+        try {
+            //read the compressed file
+            fileContent = Files.readAllBytes(file.toPath());
+        } catch (IOException ex) {
+            Logger.getLogger(Compression.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return fileContent;
+    }
+
+    static String bytesToBinaryString(byte[] bytes) {
+        StringBuilder bytesToStore = new StringBuilder();
+        //no of padding bits is not converted to binary
+        bytesToStore.append((char) bytes[0]);
+        for (int i = 1; i < bytes.length; i++) {
+            int weight = 128;
+            int value;
+            int currentByte = bytes[i] < 0 ? 256 + bytes[i] : bytes[i];
+            for (int j = 0; j < 8; j++) {
+                value = currentByte >= weight ? 1 : 0;
+                bytesToStore.append(value);
+                if (value == 1) {
+                    currentByte -= weight;
+                }
+                weight /= 2;
+            }
         }
         return bytesToStore.toString();
     }
 
-    static void writeToFile(String json) {
-        // create a file object for the current location
-        File file = new File("compressedFile.txt");
-        try {
-            // create a new file with name specified
-            // by the file object
-            boolean value = file.createNewFile();
-            if (value) {
-                //    System.out.println("New Java File is created.");
+    static String decodeBinaryString(HuffmanTree tree, String BinaryString) {
+        //get no of padding bits added at the end and convert it to int
+        int padding = BinaryString.charAt(0) - '0';
+        StringBuilder decompressed = new StringBuilder();
+        int i = 1;
+        HuffmanNode node = tree.getRoot();
+        while (i < BinaryString.length() - padding) {
+            if (node.isLeafNode()) {
+                decompressed.append(node.getCharacter());
+                node = tree.getRoot();
+                continue;
+            }
+            if (BinaryString.charAt(i) == '0') {
+                node = node.getLeft();
             } else {
-                //    System.out.println("The file already exists.");
+                node = node.getRight();
             }
-            try (FileWriter output = new FileWriter("compressedFile.txt")) {
-                output.write(json);
-            }
-        } catch (Exception e) {
-            e.getStackTrace();
+            i++;
         }
+
+        return decompressed.toString();
     }
 
-    static void compress(String s) {
-        HuffmanTree test = new HuffmanTree(s);
-        String[] charCodes = test.charCodes();
-        String h = coddedString(charCodes, s);
-        String out = coddedStringToBytes(h);
+    static HuffmanTree compress(String s) {
+        HuffmanTree tree = new HuffmanTree(s);
+        String[] charCodes = tree.charCodes();
+        String binaryString = encodeToBinaryString(charCodes, s);
+        byte[] out = binaryStringToBytes(binaryString);
         writeToFile(out);
+        return tree;
+    }
+
+    static String decompress(File compressedFile, HuffmanTree tree) {
+        byte[] compressed = readFromFile(compressedFile);
+        String binaryString = bytesToBinaryString(compressed);
+        String decompressed = decodeBinaryString(tree, binaryString);
+        return decompressed;
     }
 }
 
@@ -100,6 +165,10 @@ class HuffmanTree {
             pQueue.add(new HuffmanNode((char) 0, frequency, left, right));
         }
         this.root = pQueue.poll();
+    }
+
+    public HuffmanNode getRoot() {
+        return root;
     }
 
     void charCodes(String[] codes, HuffmanNode node, String str) {
@@ -156,6 +225,10 @@ class HuffmanNode {
 
     public HuffmanNode getRight() {
         return right;
+    }
+
+    boolean isLeafNode() {
+        return left == null && right == null;
     }
 }
 

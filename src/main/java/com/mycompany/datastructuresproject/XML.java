@@ -18,6 +18,7 @@ public class XML {
     private Tree xmlTree;
     private Graph xmlGraph;
     private ArrayList<String> slicedXML;
+    private static HuffmanTree compressionTree;
 
     //O(n), where n is the number of char in xml file
     XML(File file) {
@@ -43,7 +44,12 @@ public class XML {
     }
 
     void compress() {
-        Compression.compress(this.minifyXML());
+        System.out.println(this.minifyXML());
+        compressionTree = Compression.compress(this.minifyXML());
+    }
+
+    String decompress(String fileName) {
+        return Compression.decompress(new File(fileName), compressionTree);
     }
 
     void fixErrors() {
@@ -550,7 +556,10 @@ public class XML {
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
-        XML xml = new XML(new File("Big Big xml.xml"));
+        XML xml = new XML(new File("Big xml.xml"));
+        xml.compress();
+        System.out.println(xml.decompress("compressedFile.txt"));
+        //System.out.println(Compression.bytesToBinaryString("1J´å?*Ó?M"));
         //System.out.println(xml.xml);
 //        ArrayList<String> errors = xml.getErrors(true);
 //        if (errors == null) {
