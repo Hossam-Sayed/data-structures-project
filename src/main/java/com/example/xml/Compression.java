@@ -1,4 +1,4 @@
-package com.mycompany.datastructuresproject;
+package com.example.xml;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -8,8 +8,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Comparator;
 import java.util.PriorityQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Compression {
 
@@ -59,7 +57,7 @@ public class Compression {
             //illustrating flush() method
             os.flush();
         } catch (IOException ex) {
-            Logger.getLogger(Compression.class.getName()).log(Level.SEVERE, null, ex);
+//            Logger.getLogger(Compression.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -69,7 +67,7 @@ public class Compression {
             //read the compressed file
             fileContent = Files.readAllBytes(file.toPath());
         } catch (IOException ex) {
-            Logger.getLogger(Compression.class.getName()).log(Level.SEVERE, null, ex);
+//            Logger.getLogger(Compression.class.getName()).log(Level.SEVERE, null, ex);
         }
         return fileContent;
     }

@@ -1,4 +1,4 @@
-package com.mycompany.datastructuresproject;
+package com.example.xml;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -529,8 +529,8 @@ public class XML {
         for (int i = 0; i < slicedXML.size(); i++) {
             if (slicedXML.get(i).equals("<id>")) {
                 int val = Integer.parseInt(slicedXML.get(i + 1));
-                min = (val < min) ? val : min;
-                max = (val > max) ? val : max;
+                min = Math.min(val, min);
+                max = Math.max(val, max);
             }
         }
     }
