@@ -43,6 +43,11 @@ public class XML {
         this.xml = s;
     }
 
+    public String getXml() {
+        return xml;
+    }
+    
+
     void compress() {
         System.out.println(this.minifyXML());
         compressionTree = Compression.compress(this.minifyXML());

@@ -1,6 +1,7 @@
 package com.mycompany.datastructuresproject;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -131,6 +132,13 @@ public class Compression {
         String decompressed = decodeBinaryString(tree, binaryString);
         return decompressed;
     }
+
+    //main for testing compression
+    public static void main(String[] args) throws FileNotFoundException, IOException {
+        XML xml = new XML(new File("sample.xml"));
+        HuffmanTree tree = new HuffmanTree(xml.getXml());
+        System.out.println(HuffmanTree.preOrderTraverse(tree.getRoot()));
+    }
 }
 
 class HuffmanTree {
@@ -190,6 +198,48 @@ class HuffmanTree {
         charCodes(codes, this.root, "");
         return codes;
     }
+
+    //preoreder traverse
+    static String preOrderTraverse(HuffmanNode Node) {
+        StringBuilder traverse = new StringBuilder();
+        if (Node.isLeafNode()) {
+            char c = Node.getCharacter();
+            int weight = 128;
+            int value;
+            for (int j = 0; j < 8; j++) {
+                value = c >= weight ? 1 : 0;
+                traverse.append(value);
+                if (value == 1) {
+                    c -= weight;
+                }
+                weight /= 2;
+            }
+        } else {
+            traverse.append('1');
+            traverse.append(preOrderTraverse(Node.getLeft()));
+            traverse.append(preOrderTraverse(Node.getRight()));
+        }
+        return traverse.toString();
+    }
+
+    
+    HuffmanTree preOrderToTree(String traverse) {
+        char[] c = traverse.toCharArray();
+        return null;
+    }
+    
+    /*int getBranch(int i, char[] c, HuffmanNode node){
+        if(c[i] == '0'){
+            char b = 0;
+            int weight = 128;
+            for (int j = 0; j < 8; j++) {
+                b += (c[i + j] - '0') * weight;
+                weight /= 2;
+            }
+            HuffmanNode node = new HuffmanNode(b);
+        }
+        return i;
+    }*/
 }
 
 class HuffmanNode {
@@ -199,6 +249,10 @@ class HuffmanNode {
     private HuffmanNode left;
     private HuffmanNode right;
 
+    public HuffmanNode(char character) {
+        this.character = character;
+    }
+    
     public HuffmanNode(char character, int freq) {
         this.character = character;
         this.freq = freq;
