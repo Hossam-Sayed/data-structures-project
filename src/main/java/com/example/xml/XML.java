@@ -518,6 +518,98 @@ public class XML {
         return (mutualFollowers.isEmpty()) ? null : mutualFollowers;
     }
 
+    enum Relativity {DISTANT, FOF, FOLLOWER, ME}
+
+    public ArrayList<User> suggestFollowers(User user) {
+        ArrayList<User> suggestedList = new ArrayList<>();
+        int dummy[] = new int[max - min + 1];
+        Relativity[] relatives = new Relativity[max - min + 1];
+        relatives[Integer.parseInt(user.getId()) - min] = Relativity.ME;
+        for (User follower : user.getFollowers()) {
+            int followerIndex = Integer.parseInt(follower.getId()) - min;
+            relatives[followerIndex] = Relativity.FOLLOWER;
+            for (User distantFollower : follower.getFollowers()) {
+                int index = Integer.parseInt(distantFollower.getId()) - min;
+                if (relatives[index] == Relativity.ME || relatives[index] == Relativity.FOLLOWER) {
+                    continue;
+                } else {
+                    if (dummy[index] == 0) {
+                        dummy[index]++;
+                        suggestedList.add(distantFollower);
+                    }
+                }
+            }
+        }
+        return (suggestedList.isEmpty()) ? null : suggestedList;
+    }
+
+    public ArrayList<User> suggestFollowers(String id) {
+        User user = null;
+        for (User user1 : xmlGraph.getUsers()) {
+            if (user1.getId().equals(id)) {
+                user = user1;
+                break;
+            }
+        }
+        ArrayList<User> suggestedList = new ArrayList<>();
+        int dummy[] = new int[max - min + 1];
+        Relativity[] relatives = new Relativity[max - min + 1];
+        relatives[Integer.parseInt(user.getId()) - min] = Relativity.ME;
+        for (User follower : user.getFollowers()) {
+            int followerIndex = Integer.parseInt(follower.getId()) - min;
+            relatives[followerIndex] = Relativity.FOLLOWER;
+        }
+        for (User follower : user.getFollowers()) {
+            for (User distantFollower : follower.getFollowers()) {
+                int index = Integer.parseInt(distantFollower.getId()) - min;
+                if (relatives[index] == Relativity.ME || relatives[index] == Relativity.FOLLOWER) {
+                    continue;
+                } else {
+                    if (dummy[index] == 0) {
+                        dummy[index]++;
+                        suggestedList.add(distantFollower);
+                    }
+                }
+            }
+        }
+        return (suggestedList.isEmpty()) ? null : suggestedList;
+    }
+
+    public ArrayList<Post> searchPosts(String searchWord) {
+        searchWord = searchWord.toLowerCase();
+        ArrayList<Post> allPosts = new ArrayList<>();
+        ArrayList<Post> searchedPosts = new ArrayList<>();
+        boolean found;
+
+        for (User user : xmlGraph.getUsers()) {
+            allPosts.addAll(user.getPosts());
+        }
+
+        for (Post post : allPosts) {
+            found = false;
+            String[] words = post.getBody().split(" ");
+
+            for (String word : words) {
+                if (word.toLowerCase().equals(searchWord)) {
+                    searchedPosts.add(post);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                for (String topic : post.getTopics()) {
+                    if (topic.toLowerCase().equals(searchWord)) {
+                        searchedPosts.add(post);
+                        break;
+                    }
+                }
+            }
+        }
+
+        return (searchedPosts.isEmpty()) ? null : searchedPosts;
+    }
+
     // O(n), n is the length of the XML file
     void setMaxAndMinIds() {
         for (int i = 0; i < slicedXML.size(); i++) {
@@ -555,6 +647,24 @@ public class XML {
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
+
+//        suggestFollowers test
+//        XML xml = new XML(new File("sampleFollowers.xml"));
+//        if (xml.isValid()) {
+//            xml.sliceXML();
+//            xml.xmlToGraph();
+//        }
+//        String id = "1";
+//        ArrayList<User> users = xml.suggestFollowers(id);
+//        System.out.println("User " + id);
+//        if (users == null) {
+//            System.out.println("No FOFs");
+//            return;
+//        }
+//        for (User user : users) {
+//            System.out.println("FOF " + user.getId());
+//        }
+
         //compression test
         /*XML xml = new XML(new File("sample.xml"));
         xml.compress("File1");

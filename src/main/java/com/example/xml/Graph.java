@@ -6,10 +6,14 @@ public class Graph {
 
     private ArrayList<User> users;
 
+    Graph() {
+        users = new ArrayList<>();
+    }
+
     void addUser(User node) {
         users.add(node);
     }
-    
+
     ArrayList<User> getUsers() {
         return users;
     }
@@ -43,11 +47,11 @@ class User {
     public void addFollower(User user) {
         followers.add(user);
     }
-    
+
     public void incFollows() {
         follows++;
     }
-    
+
     public int getFollows() {
         return follows;
     }
@@ -59,6 +63,10 @@ class User {
     public String getId() {
         return id;
     }
+
+    public ArrayList<Post> getPosts() {
+        return posts;
+    }
 }
 
 class Post {
@@ -66,11 +74,23 @@ class Post {
     private String body;
     private ArrayList<String> topics;
 
+    Post() {
+        topics = new ArrayList<>();
+    }
+
     public void setBody(String body) {
         this.body = body;
     }
 
     void addTopic(String topic) {
         topics.add(topic);
+    }
+
+    public String getBody() {
+        return body;
+    }
+
+    public ArrayList<String> getTopics() {
+        return topics;
     }
 }
