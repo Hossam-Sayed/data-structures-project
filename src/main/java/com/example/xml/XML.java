@@ -18,7 +18,6 @@ public class XML {
     private Tree xmlTree;
     private Graph xmlGraph;
     private ArrayList<String> slicedXML;
-    private static HuffmanTree compressionTree;
 
     //O(n), where n is the number of char in xml file
     XML(File file) {
@@ -35,7 +34,7 @@ public class XML {
             xml.deleteCharAt(xml.length() - 1);
             this.xml = xml.toString();
             reader.close();
-        } catch (IOException e) {
+        } catch (IOException ignored) {
         }
     }
 
@@ -46,15 +45,13 @@ public class XML {
     public String getXml() {
         return xml;
     }
-    
 
-    void compress() {
-        System.out.println(this.minifyXML());
-        compressionTree = Compression.compress(this.minifyXML());
+    void compress(String fileName) {
+        Compression.compress(this.minifyXML(), fileName);
     }
 
     String decompress(String fileName) {
-        return Compression.decompress(new File(fileName), compressionTree);
+        return Compression.decompress(new File(fileName));
     }
 
     void fixErrors() {
@@ -258,7 +255,8 @@ public class XML {
                 }
                 TreeNode parent = s.peek();
                 parent.insertChild(child); // Make popped tag child to the tag on the top of stack
-            } else if (isTag(item)); else { // If it is data
+            } else if (isTag(item)) ;
+            else { // If it is data
                 s.peek().setData(item);
             }
         }
@@ -283,13 +281,12 @@ public class XML {
                 }
             } else if (isClosingTag(item)) {
                 switch (item) {
-                    case "</user>" ->
-                        xmlGraph.addUser(user); // May set user = null
-                    case "</post>" ->
-                        user.addPost(post); // May set post = null
+                    case "</user>" -> xmlGraph.addUser(user); // May set user = null
+                    case "</post>" -> user.addPost(post); // May set post = null
                 }
                 s.pop();
-            } else if (isTag(item)); else {
+            } else if (isTag(item)) ;
+            else {
                 switch (s.peek()) {
                     case "<id>" -> {
                         int index = Integer.parseInt(item) - min; // Calculate index to access dummy
@@ -311,12 +308,9 @@ public class XML {
                         }
                         s.push("<id>"); // Push the ID tag again
                     }
-                    case "<name>" ->
-                        user.setName(item); // Set the name of the current user
-                    case "<body>" ->
-                        post.setBody(item); // Set the post body to Post object
-                    case "<topic>" ->
-                        post.addTopic(item); // Add the post topic to Post object topics list
+                    case "<name>" -> user.setName(item); // Set the name of the current user
+                    case "<body>" -> post.setBody(item); // Set the post body to Post object
+                    case "<topic>" -> post.addTopic(item); // Add the post topic to Post object topics list
                 }
             }
         }
@@ -561,10 +555,14 @@ public class XML {
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
-        XML xml = new XML(new File("Big xml.xml"));
-        xml.compress();
-        System.out.println(xml.decompress("compressedFile.txt"));
-        //System.out.println(Compression.bytesToBinaryString("1J´å?*Ó?M"));
+        //compression test
+        /*XML xml = new XML(new File("sample.xml"));
+        xml.compress("File1");
+        xml = new XML(new File("sample with errors.xml"));
+        xml.compress("File2");
+        System.out.println(xml.decompress("File1"));
+        String s = xml.decompress("File2");
+        System.out.println(s);*/
         //System.out.println(xml.xml);
 //        ArrayList<String> errors = xml.getErrors(true);
 //        if (errors == null) {
@@ -578,10 +576,11 @@ public class XML {
         /*if (xml.isValid()) {
             xml.sliceXML();
             xml.format();
-            String ste = xml.xmlToJson();
-            System.out.println(ste);
+            System.out.println(xml.xml);
+            //String ste = xml.xmlToJson();
+            //System.out.println(ste);
             // xml.str_to_xmlFile();
-            xml.str_to_jsonFile(ste);
+            //xml.str_to_jsonFile(ste);
         }*/
     }
 }

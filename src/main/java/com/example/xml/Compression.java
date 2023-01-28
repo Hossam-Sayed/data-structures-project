@@ -10,21 +10,22 @@ import java.util.Comparator;
 import java.util.PriorityQueue;
 
 public class Compression {
-
+    static String paddingToBinaryString(String binaryString){
+        //add padding to make the code multiple of 8 (can be converted to bytes)
+        int padding = 8 - binaryString.length() % 8;
+        padding = padding == 8 ? 0 : padding;
+        StringBuilder toAdd = new StringBuilder();
+        for (int i = 0; i < padding; i++) {
+            toAdd.append('1');
+        }
+        return padding + binaryString + toAdd.toString();
+    }
     static String encodeToBinaryString(String[] charCodes, String toCode) {
         StringBuilder code = new StringBuilder();
         for (int i = 0; i < toCode.length(); i++) {
             code.append(charCodes[toCode.charAt(i)]);
         }
-        //add padding to make the code multiple of 8 (can be converted to bytes)
-        int padding = 8 - code.length() % 8;
-        padding = padding == 8 ? 0 : padding;
-        for (int i = 0; i < padding; i++) {
-            code.append('1');
-        }
-        StringBuilder codewithpadding = new StringBuilder();
-        codewithpadding.append(padding + code.toString());
-        return codewithpadding.toString();
+        return paddingToBinaryString(code.toString());
     }
 
     static byte[] binaryStringToBytes(String binaryString) {
@@ -46,12 +47,27 @@ public class Compression {
         return bytes;
     }
 
-    static void writeToFile(byte[] compressedBytes) {
+    static byte[] TreeLengthToBytes(byte[] Tree){
+        int length = Tree.length;
+        int hundreds = length/100;
+        int tens = (length - hundreds*100)/10;
+        int ones = (length - hundreds*100 - tens * 10);
+        return new byte[]{(byte) hundreds, (byte) tens, (byte) ones};
+    }
+
+    static int getTreeLength(byte[] Tree){
+        return Tree[0]*100 + Tree[1]*10 + Tree[2];
+    }
+
+    static void writeToFile(byte[] compressionTree,byte[] compressedBytes, String fileName) {
         // create a file object for the current location
         OutputStream os;
+        byte[] treeLength = TreeLengthToBytes(compressionTree);
         try {
-            os = new FileOutputStream("compressedFile.txt");
+            os = new FileOutputStream(fileName);
             //illustrating write(byte[] b) method
+            os.write(treeLength);
+            os.write(compressionTree);
             os.write(compressedBytes);
 
             //illustrating flush() method
@@ -72,11 +88,24 @@ public class Compression {
         return fileContent;
     }
 
-    static String bytesToBinaryString(byte[] bytes) {
+    static String bytesToTreeBinaryString(byte[] bytes){
+        int length = getTreeLength(bytes);
+        return bytesToBinaryString(bytes,3,length+3);
+    }
+
+    static String bytesToFileBinaryString(byte[] bytes) {
+        //skip the tree part
+        int start = getTreeLength(bytes) + 3;
+        int end = bytes.length ;
+        //no of padding bits is not converted to binary
+        return bytesToBinaryString(bytes,start,end);
+    }
+
+    static String bytesToBinaryString(byte[] bytes,int start, int end) {
         StringBuilder bytesToStore = new StringBuilder();
         //no of padding bits is not converted to binary
-        bytesToStore.append((char) bytes[0]);
-        for (int i = 1; i < bytes.length; i++) {
+        bytesToStore.append((char) bytes[start]);
+        for (int i = start + 1; i < end; i++) {
             int weight = 128;
             int value;
             int currentByte = bytes[i] < 0 ? 256 + bytes[i] : bytes[i];
@@ -111,39 +140,65 @@ public class Compression {
             }
             i++;
         }
-
+        if (node.isLeafNode()) {
+            decompressed.append(node.getCharacter());
+        }
         return decompressed.toString();
     }
 
-    static HuffmanTree compress(String s) {
+    static void compress(String s,String fileName) {
         HuffmanTree tree = new HuffmanTree(s);
+        String traverse = tree.preOrderTraverse();
+        traverse = paddingToBinaryString(traverse);
         String[] charCodes = tree.charCodes();
         String binaryString = encodeToBinaryString(charCodes, s);
-        byte[] out = binaryStringToBytes(binaryString);
-        writeToFile(out);
-        return tree;
+        byte[] outTree = binaryStringToBytes(traverse);
+        byte[] outCompression = binaryStringToBytes(binaryString);
+        writeToFile(outTree,outCompression,fileName);
     }
 
-    static String decompress(File compressedFile, HuffmanTree tree) {
+    static String decompress(File compressedFile) {
         byte[] compressed = readFromFile(compressedFile);
-        String binaryString = bytesToBinaryString(compressed);
-        String decompressed = decodeBinaryString(tree, binaryString);
+        String TreebinaryString = bytesToTreeBinaryString(compressed);
+        String FilebinaryString = bytesToFileBinaryString(compressed);
+        HuffmanTree tree = new HuffmanTree(TreebinaryString.toCharArray());
+        String decompressed = decodeBinaryString(tree, FilebinaryString);
         return decompressed;
     }
 
     //main for testing compression
     public static void main(String[] args) throws FileNotFoundException, IOException {
-        XML xml = new XML(new File("sample.xml"));
+        /*XML xml = new XML(new File("sample.xml"));
         HuffmanTree tree = new HuffmanTree(xml.getXml());
-        System.out.println(HuffmanTree.preOrderTraverse(tree.getRoot()));
+        String s = tree.preOrderTraverse();
+        System.out.println(s);
+        HuffmanTree t = new HuffmanTree(s.toCharArray());
+        s = t.preOrderTraverse();
+        System.out.println(s);
+        writeToFile(new byte[]{60,61,62,63},new byte[]{64,65,67,68},"fileName");
+        byte[] compressed = readFromFile(new File("fileName"));
+        String TreebinaryString = bytesToTreeBinaryString(compressed);
+        String FilebinaryString = bytesToFileBinaryString(compressed);
+        System.out.println(TreebinaryString);
+        System.out.println(FilebinaryString);*/
+
     }
 }
 
 class HuffmanTree {
 
     private HuffmanNode root;
-
+    private int traverseIndex;
+    public HuffmanTree(){}
     //make the huffman tree
+
+    //construct the tree using its pre-order traverse
+    public HuffmanTree (char[] c) {
+        TraverseNode root = getBranch(1, c);
+        this.root = root.node;
+    }
+
+    //construct the tree using the string to compress
     public HuffmanTree(String xml) {
         int[] Charfreq = new int[128];      //initialized to zeros
         char[] xmlChars = xml.toCharArray();
@@ -166,7 +221,7 @@ class HuffmanTree {
             int frequency = left.getFreq() + right.getFreq();
 
             //make a parent node to hold these nodes 
-            //set it's char to null as it doesnt represent a char)
+            //set its char to null as it doesn't represent a char
             //it's frequency is sum of freq of it's children
             pQueue.add(new HuffmanNode((char) 0, frequency, left, right));
         }
@@ -196,8 +251,11 @@ class HuffmanTree {
         charCodes(codes, this.root, "");
         return codes;
     }
+    String preOrderTraverse(){
+        return preOrderTraverse(this.root);
+    }
 
-    //preoreder traverse
+    //pre-oreder traverse
     static String preOrderTraverse(HuffmanNode Node) {
         StringBuilder traverse = new StringBuilder();
         if (Node.isLeafNode()) {
@@ -220,13 +278,7 @@ class HuffmanTree {
         return traverse.toString();
     }
 
-    
-    HuffmanTree preOrderToTree(String traverse) {
-        char[] c = traverse.toCharArray();
-        return null;
-    }
-    
-    /*int getBranch(int i, char[] c, HuffmanNode node){
+    TraverseNode getBranch(int i, char[] c){
         if(c[i] == '0'){
             char b = 0;
             int weight = 128;
@@ -235,9 +287,25 @@ class HuffmanTree {
                 weight /= 2;
             }
             HuffmanNode node = new HuffmanNode(b);
+            return new TraverseNode(node, i+8);
         }
-        return i;
-    }*/
+        HuffmanNode node = new HuffmanNode((char) 0);
+        TraverseNode left = getBranch(i+1, c);
+        node.setLeft(left.node);
+        TraverseNode right = getBranch(left.branchLastIndex, c);
+        node.setRight(right.node);
+        return new TraverseNode(node,right.branchLastIndex);
+    }
+}
+
+class TraverseNode{
+    HuffmanNode node;
+    int branchLastIndex;
+
+    public TraverseNode(HuffmanNode node, int branchLastIndex) {
+        this.node = node;
+        this.branchLastIndex = branchLastIndex;
+    }
 }
 
 class HuffmanNode {
@@ -277,6 +345,14 @@ class HuffmanNode {
 
     public HuffmanNode getRight() {
         return right;
+    }
+
+    public void setLeft(HuffmanNode left) {
+        this.left = left;
+    }
+
+    public void setRight(HuffmanNode right) {
+        this.right = right;
     }
 
     boolean isLeafNode() {
