@@ -4,17 +4,29 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
 
 public class Controller {
+    XML xmlFile;
     @FXML
     private Label welcomeText;
 
     @FXML
     protected void onHelloButtonClick() {
         welcomeText.setText("Valid");
+    }
+    @FXML
+    public void xmlFileChooser(){
+        FileChooser fc = new FileChooser();
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter(".xml","*.xml"));
+        File f = fc.showOpenDialog(null);
+        if( f != null){
+            xmlFile = new XML(f);
+        }
     }
 
     @FXML
