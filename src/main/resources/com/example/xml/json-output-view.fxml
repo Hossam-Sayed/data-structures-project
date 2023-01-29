@@ -10,18 +10,11 @@
       prefWidth="640.0" HBox.hgrow="ALWAYS" xmlns="http://javafx.com/javafx/17.0.1" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.example.xml.Controller">
     <children>
-        <TextArea fx:id="outputTextArea" editable="false" VBox.vgrow="ALWAYS"/>
+        <TextArea fx:id="jsonOutputTextArea" editable="false" VBox.vgrow="ALWAYS"/>
         <HBox alignment="CENTER" maxWidth="1.7976931348623157E308" prefWidth="200.0" VBox.vgrow="SOMETIMES">
             <children>
-                <Button fx:id="exportToTextAreaButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false"
-                        onAction="#exportToTextArea" prefHeight="26.0" prefWidth="155.0" text="Export To Text Area"
-                        HBox.hgrow="ALWAYS">
-                    <HBox.margin>
-                        <Insets right="5.0"/>
-                    </HBox.margin>
-                </Button>
-                <Button fx:id="exportToFileButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false"
-                        onAction="#saveToFile" prefHeight="26.0" prefWidth="155.0" text="Export to File"
+                <Button fx:id="exportJsonToFileButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false"
+                        onAction="#onExportToJsonFileClick" prefHeight="26.0" prefWidth="155.0" text="Export to File"
                         HBox.hgrow="ALWAYS">
                     <HBox.margin>
                         <Insets left="5.0"/>

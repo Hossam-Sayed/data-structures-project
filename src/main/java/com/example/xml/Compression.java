@@ -10,7 +10,7 @@ import java.util.Comparator;
 import java.util.PriorityQueue;
 
 public class Compression {
-    static String paddingToBinaryString(String binaryString){
+    static String paddingToBinaryString(String binaryString) {
         //add padding to make the code multiple of 8 (can be converted to bytes)
         int padding = 8 - binaryString.length() % 8;
         padding = padding == 8 ? 0 : padding;
@@ -20,6 +20,7 @@ public class Compression {
         }
         return padding + binaryString + toAdd.toString();
     }
+
     static String encodeToBinaryString(String[] charCodes, String toCode) {
         StringBuilder code = new StringBuilder();
         for (int i = 0; i < toCode.length(); i++) {
@@ -47,24 +48,24 @@ public class Compression {
         return bytes;
     }
 
-    static byte[] TreeLengthToBytes(byte[] Tree){
+    static byte[] TreeLengthToBytes(byte[] Tree) {
         int length = Tree.length;
-        int hundreds = length/100;
-        int tens = (length - hundreds*100)/10;
-        int ones = (length - hundreds*100 - tens * 10);
+        int hundreds = length / 100;
+        int tens = (length - hundreds * 100) / 10;
+        int ones = (length - hundreds * 100 - tens * 10);
         return new byte[]{(byte) hundreds, (byte) tens, (byte) ones};
     }
 
-    static int getTreeLength(byte[] Tree){
-        return Tree[0]*100 + Tree[1]*10 + Tree[2];
+    static int getTreeLength(byte[] Tree) {
+        return Tree[0] * 100 + Tree[1] * 10 + Tree[2];
     }
 
-    static void writeToFile(byte[] compressionTree,byte[] compressedBytes, String fileName) {
+    static void writeToFile(byte[] compressionTree, byte[] compressedBytes, String path) {
         // create a file object for the current location
         OutputStream os;
         byte[] treeLength = TreeLengthToBytes(compressionTree);
         try {
-            os = new FileOutputStream(fileName);
+            os = new FileOutputStream(path);
             //illustrating write(byte[] b) method
             os.write(treeLength);
             os.write(compressionTree);
@@ -88,20 +89,20 @@ public class Compression {
         return fileContent;
     }
 
-    static String bytesToTreeBinaryString(byte[] bytes){
+    static String bytesToTreeBinaryString(byte[] bytes) {
         int length = getTreeLength(bytes);
-        return bytesToBinaryString(bytes,3,length+3);
+        return bytesToBinaryString(bytes, 3, length + 3);
     }
 
     static String bytesToFileBinaryString(byte[] bytes) {
         //skip the tree part
         int start = getTreeLength(bytes) + 3;
-        int end = bytes.length ;
+        int end = bytes.length;
         //no of padding bits is not converted to binary
-        return bytesToBinaryString(bytes,start,end);
+        return bytesToBinaryString(bytes, start, end);
     }
 
-    static String bytesToBinaryString(byte[] bytes,int start, int end) {
+    static String bytesToBinaryString(byte[] bytes, int start, int end) {
         StringBuilder bytesToStore = new StringBuilder();
         //no of padding bits is not converted to binary
         bytesToStore.append((char) bytes[start]);
@@ -146,7 +147,7 @@ public class Compression {
         return decompressed.toString();
     }
 
-    static void compress(String s,String fileName) {
+    static void compress(String s, String path) {
         HuffmanTree tree = new HuffmanTree(s);
         String traverse = tree.preOrderTraverse();
         traverse = paddingToBinaryString(traverse);
@@ -154,7 +155,7 @@ public class Compression {
         String binaryString = encodeToBinaryString(charCodes, s);
         byte[] outTree = binaryStringToBytes(traverse);
         byte[] outCompression = binaryStringToBytes(binaryString);
-        writeToFile(outTree,outCompression,fileName);
+        writeToFile(outTree, outCompression, path);
     }
 
     static String decompress(File compressedFile) {
@@ -189,11 +190,13 @@ class HuffmanTree {
 
     private HuffmanNode root;
     private int traverseIndex;
-    public HuffmanTree(){}
+
+    public HuffmanTree() {
+    }
     //make the huffman tree
 
     //construct the tree using its pre-order traverse
-    public HuffmanTree (char[] c) {
+    public HuffmanTree(char[] c) {
         TraverseNode root = getBranch(1, c);
         this.root = root.node;
     }
@@ -251,7 +254,8 @@ class HuffmanTree {
         charCodes(codes, this.root, "");
         return codes;
     }
-    String preOrderTraverse(){
+
+    String preOrderTraverse() {
         return preOrderTraverse(this.root);
     }
 
@@ -278,8 +282,8 @@ class HuffmanTree {
         return traverse.toString();
     }
 
-    TraverseNode getBranch(int i, char[] c){
-        if(c[i] == '0'){
+    TraverseNode getBranch(int i, char[] c) {
+        if (c[i] == '0') {
             char b = 0;
             int weight = 128;
             for (int j = 0; j < 8; j++) {
@@ -287,18 +291,18 @@ class HuffmanTree {
                 weight /= 2;
             }
             HuffmanNode node = new HuffmanNode(b);
-            return new TraverseNode(node, i+8);
+            return new TraverseNode(node, i + 8);
         }
         HuffmanNode node = new HuffmanNode((char) 0);
-        TraverseNode left = getBranch(i+1, c);
+        TraverseNode left = getBranch(i + 1, c);
         node.setLeft(left.node);
         TraverseNode right = getBranch(left.branchLastIndex, c);
         node.setRight(right.node);
-        return new TraverseNode(node,right.branchLastIndex);
+        return new TraverseNode(node, right.branchLastIndex);
     }
 }
 
-class TraverseNode{
+class TraverseNode {
     HuffmanNode node;
     int branchLastIndex;
 
@@ -318,7 +322,7 @@ class HuffmanNode {
     public HuffmanNode(char character) {
         this.character = character;
     }
-    
+
     public HuffmanNode(char character, int freq) {
         this.character = character;
         this.freq = freq;

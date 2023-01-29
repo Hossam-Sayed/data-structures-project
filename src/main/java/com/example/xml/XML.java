@@ -12,6 +12,11 @@ import java.util.Stack;
 public class XML {
 
     int min, max = 0;
+
+    public void setValid(boolean valid) {
+        this.valid = valid;
+    }
+
     private boolean valid = false;
     private boolean sliced = false;
     private String xml;
@@ -46,25 +51,29 @@ public class XML {
         return xml;
     }
 
-    void compress(String fileName) {
-        Compression.compress(this.minifyXML(), fileName);
+    void compress(String path) {
+        Compression.compress(this.xml, path);
     }
 
-    String decompress(String fileName) {
-        return Compression.decompress(new File(fileName));
+    static String decompress(String path) {
+        return Compression.decompress(new File(path));
     }
 
     void fixErrors() {
         getErrors(true);
     }
 
-    boolean isValid() {
+    boolean isValidold() {
         if (valid) {
             return true;
         }
         ArrayList<String> errors = getErrors(false);
         valid = errors == null ? true : valid;
         return errors == null;
+    }
+
+    public boolean isValid() {
+        return valid;
     }
 
     ArrayList<String> getErrors(boolean fix) {
@@ -236,12 +245,15 @@ public class XML {
 
     // O(n), n is the length of the XML file
     void xmlToTree() {
-        if (!valid || !sliced) {
+        if (!valid) {
             return;
+        } else if (!sliced) {
+            sliceXML();
         }
         Stack<TreeNode> s = new Stack<>();
         for (String item : slicedXML) {
-            if (isOpeningTag(item)) { // If it is an open tag
+            if (item == null || item.equals("")) ;
+            else if (isOpeningTag(item)) { // If it is an open tag
                 TreeNode root = new TreeNode(removeAngleBrackets(item));
                 if (s.isEmpty()) { // First time to push, We create the Tree object then push <users>
                     xmlTree = new Tree(root);
@@ -356,9 +368,9 @@ public class XML {
         xml = str;
     }
 
-    void str_to_xmlFile() {
+    void stringToXmlFile(String path) {
         // create a file object for the current location
-        File file = new File("exportedxml.xml");
+        File file = new File(path);
         try {
             // create a new file with name specified
             // by the file object
@@ -368,7 +380,7 @@ public class XML {
             } else {
                 //System.out.println("The file already exists.");
             }
-            try (FileWriter output = new FileWriter("exportedxml.xml")) {
+            try (FileWriter output = new FileWriter(path)) {
                 output.write(xml);
             }
         } catch (Exception e) {
