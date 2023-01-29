@@ -328,32 +328,41 @@ public class XML {
         }
     }
 
+
     String formatingNode(String str, TreeNode node) {
-        String addition = "";
-        addition += str;
-        addition += "\t";
-        String strs = "";
-        strs += "<" + (node.getTagName()) + ">";
+        StringBuilder addition = new StringBuilder();
+        //String addition = "";
+        addition.append(str + "\t");
+        //addition += str;
+        //addition += "\t";
+        StringBuilder strs = new StringBuilder();
+        //String strs = "";
+        strs.append("<" + node.getTagName() + ">");
+        //strs += "<" + (node.getTagName()) + ">";
         ArrayList<TreeNode> childrens = node.getChildren();
-        if (childrens != null) {
+        if (!childrens.isEmpty()) {
             for (int i = 0; i < childrens.size(); i++) {
-                strs += addition;
-                strs += formatingNode(addition, childrens.get(i));
+                strs.append(addition);
+                //strs += addition;
+                strs.append(formatingNode(addition.toString(), childrens.get(i)));
+                //strs += formatingNode(addition, childrens.get(i));
             }
         } else {
-            strs += (addition);
-            strs += (node.getData());
-            strs += str;
-            strs += "</";
-            strs += (node.getTagName());
-            strs += ">";
-            return strs;
+            strs.append(addition + node.getData() + str + "</" + node.getTagName() + ">");
+            //strs += (addition);
+            //strs += (node.getData());
+            //strs += str;
+            //strs += "</";
+            //strs += (node.getTagName());
+            //strs += ">";
+            return strs.toString();
         }
-        strs += str;
-        strs += "</";
-        strs += (node.getTagName());
-        strs += ">";
-        return strs;
+        strs.append(str + "</" + node.getTagName() + ">");
+        //strs += str;
+        //strs += "</";
+        //strs += (node.getTagName());
+        //strs += ">";
+        return strs.toString();
     }
 
     void format() {
@@ -367,6 +376,10 @@ public class XML {
         }
         xml = str;
     }
+
+
+
+
 
     void stringToXmlFile(String path) {
         // create a file object for the current location
@@ -408,25 +421,116 @@ public class XML {
         }
     }
 
+
+
     String jsonFormatingNode(String str, TreeNode node) {
-        String addition = "";
-        addition += str;
-        addition += "\t";
-        String strs = "";
-        String type = "";
+        StringBuilder addition = new StringBuilder();
+        //String addition = "";
+        addition.append(str);
+        //addition += str;
+        if(!addition.toString().equals(" ")) {
+            addition.append("\t");
+            //addition += "\t";
+        }
+        StringBuilder strs = new StringBuilder();
+        //String strs = "";
+        //String type = "";
         ArrayList<TreeNode> childrens = node.getChildren();
-        if (childrens != null) {
-            if (childrens.get(0).getData() != null) {
+        ArrayList<TreeNode> sortedChildrens = new ArrayList<>();
+        int[] visitedChildrens = new int[childrens.size()];
+
+        for (int i = 0; i < childrens.size(); i++) {
+            if (visitedChildrens[i] == 1)
+                continue;
+
+            sortedChildrens.add(childrens.get(i));
+            visitedChildrens[i] = 1;
+
+            for (int j = 0; j < childrens.size(); j++) {
+                if (childrens.get(i).getTagName().equals(childrens.get(j).getTagName()) && (i != j)) {
+                    sortedChildrens.add(childrens.get(j));
+                    visitedChildrens[j] = 1;
+                }
+
+            }
+        }
+
+/*
+        for(TreeNode n: sortedChildrens)
+            System.out.println(n.getTagName());
+        System.out.println("");
+*/
+
+        if (!sortedChildrens.isEmpty()) {
+           /* if (childrens.get(0).getData() != null) {
                 type = "{";
             } else {
                 type = "[";
             }
-            strs += ("\t\"" + (node.getTagName()) + "\":" + type);
-            for (int i = 0; i < childrens.size(); i++) {
-                strs += addition;
-                strs += jsonFormatingNode(addition, childrens.get(i));
+            */
+            for (int i = 0; i < sortedChildrens.size(); i++) {
+                if (i < sortedChildrens.size() - 1 && sortedChildrens.get(i).getTagName().equals(sortedChildrens.get(i + 1).getTagName())) {
+                    strs.append(addition +"\"" + (sortedChildrens.get(i).getTagName()) + "\":" + "[");
+                    //strs += (addition +"\"" + (sortedChildrens.get(i).getTagName()) + "\":" + "[");
+                    //while(sortedChildrens.get(i).getTagName().equals(sortedChildrens.get(i+1).getTagName()) && (i < sortedChildrens.size()-2)) {
+                    String s = sortedChildrens.get(i).getTagName();
+                    while (i < sortedChildrens.size() && sortedChildrens.get(i).getTagName().equals(s)) {
+                        if(sortedChildrens.get(i).getChildren()!=null && sortedChildrens.get(i).getChildren().size()>=1) {
+                            strs.append(addition + "\t{");
+                            strs.append(jsonFormatingNode(addition.toString()+"\t", sortedChildrens.get(i)));
+                            if(strs.charAt(strs.length() - 1)==','){
+                                strs.deleteCharAt(strs.length() - 1);
+                            }
+                            strs.append(addition + "\t},");
+                        }
+                        else{
+                            strs.append(jsonFormatingNode(addition.toString(), sortedChildrens.get(i)));
+                        }
+                        //strs += jsonFormatingNode(addition, sortedChildrens.get(i));
+                        i++;
+                    }
+                    i--;
+                    //delete last character, add ]
+                    if(strs.charAt(strs.length() - 1)==','){
+                        strs.deleteCharAt(strs.length() - 1);
+                    }
+                    strs.append(addition+"],");
+                } else {
+                    //strs += addition;
+                    if (sortedChildrens.get(i).getChildren()!=null
+                            && !sortedChildrens.get(i).getChildren().isEmpty()){
+                        //  || (sortedChildrens.get(i).getChildren().size()==1
+                        // && sortedChildrens.get(i).getChildren().get(0).getChildren().isEmpty()))) {
+                        strs.append(addition + "\"" + sortedChildrens.get(i).getTagName()+ "\":" + "{");
+                        //strs += addition;
+                        //strs += ("\"" + (sortedChildrens.get(i).getTagName()) + "\":" + "{");
+                        strs.append(jsonFormatingNode(addition.toString(), sortedChildrens.get(i)));
+                        //strs += jsonFormatingNode(addition, sortedChildrens.get(i));
+                        //delete last character, add }
+                        if(strs.charAt(strs.length() - 1)==','){
+                            strs.deleteCharAt(strs.length() - 1);
+                        }
+                        strs.append(addition+"},");
+                    } else {
+                        strs.append(addition + "\"" + sortedChildrens.get(i).getTagName() +"\":");
+                        //strs += addition;
+                        //strs += ("\"" + (sortedChildrens.get(i).getTagName()) + "\":");
+                        strs.append(jsonFormatingNode(" ", sortedChildrens.get(i)));
+                        //strs +=jsonFormatingNode(" ", sortedChildrens.get(i));
+                    }
+                }
+
+
             }
+
         } else {
+            strs.append(addition + "\""+node.getData() + "\"" +",");
+            //strs += addition;
+            //strs += node.getData();
+            //strs += ",";
+        }
+        /*
+        else {
             strs += "\t\"" + (node.getTagName()) + "\":";
             //strs += (addition + "\t");
             strs += (" \"" + node.getData() + "\"");
@@ -442,7 +546,9 @@ public class XML {
         } else {
             strs += "]";
         }
-        return strs;
+         */
+        return strs.toString();
+
     }
 
     String xmlToJson() {
@@ -450,14 +556,30 @@ public class XML {
             this.xmlToTree();
             //  xmlToJson();
         }
-        String str = "{\n";
+        StringBuilder str = new StringBuilder();
+        str.append("{\n");
+        //String str = "{\n";
         TreeNode node = xmlTree.getRoot();
         if (node != null) {
-            str += jsonFormatingNode("\n", node);
+            str.append("\t" +"\""+ node.getTagName() +"\""+":{");
+            //str +="\t" +"\""+ node.getTagName() +"\""+":{";
+            str.append(jsonFormatingNode("\n\t", node));
+            //str += jsonFormatingNode("\n\t", node);
+
         }
-        str += "\n}";
-        return str;
+        if(str.charAt(str.length() - 1)==','){
+            str.deleteCharAt(str.length() - 1);
+        }
+        str.append("\n\t}" + "\n}");
+        //str +="\n\t}";
+        //str += "\n}";
+        return str.toString();
     }
+
+
+
+
+
 
     // O(n), n is the number of users
     User getMostActive() {
