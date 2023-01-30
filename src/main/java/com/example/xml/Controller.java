@@ -7,6 +7,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -30,16 +33,25 @@ public class Controller {
     public Button networkAnalysisButton;
     public TextArea jsonOutputTextArea;
     public Button exportJsonToFileButton;
+    public Label resultLabel;
+    public Button mostInfButton;
+    public Button mostActiveButton;
+    public Button mutualButton;
+    public Button suggestButton;
+    public Button okButton;
+    public TextArea resultText;
+    public TextField inputTextField2;
+    public TextField inputTextField1;
     XML xmlFile;
+
+    public XML getXmlFile() {
+        return xmlFile;
+    }
+
     FXMLLoader outputLoader;
 
     @FXML
     private Label labelText;
-
-    @FXML
-    protected void onHelloButtonClick() {
-        labelText.setText("Valid");
-    }
 
     @FXML
     public void xmlFileChooser() {
@@ -55,7 +67,11 @@ public class Controller {
 
     @FXML
     protected void onTextChanged() {
-        xmlFile = new XML(mainTextArea.getText());
+        if (!mainTextArea.getText().equals("")) {
+            xmlFile = new XML(mainTextArea.getText());
+        } else {
+            xmlFile = null;
+        }
         labelText.setText("");
         fixErrorsButton.setDisable(true);
         formatButton.setDisable(true);
@@ -67,6 +83,9 @@ public class Controller {
     @FXML
     protected void onMinifyClick() throws IOException {
         if (xmlFile == null) {
+
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+            labelText.setTextFill(Color.RED);
             labelText.setText("Choose an XML file");
         } else {
             Controller controller = openOutputWindow("Minify", "output-view.fxml");
@@ -95,6 +114,8 @@ public class Controller {
     @FXML
     protected void compress() {
         if (xmlFile == null) {
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+            labelText.setTextFill(Color.RED);
             labelText.setText("Choose an XML file");
         } else {
             FileChooser fc = new FileChooser();
@@ -121,15 +142,22 @@ public class Controller {
     @FXML
     protected void onValidateClick() throws IOException {
         if (xmlFile == null) {
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+            labelText.setTextFill(Color.RED);
             labelText.setText("Choose an XML file");
         } else {
             if (xmlFile.isValid()) {
+                labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+                labelText.setTextFill(Color.GREEN);
                 labelText.setText("Valid");
             } else {
                 ArrayList<String> errors = xmlFile.getErrors(false);
                 xmlFile.setValid(errors == null);
                 if (errors != null) {
                     Controller controller = openOutputWindow("Errors", "output-view.fxml");
+                    labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+                    labelText.setTextFill(Color.RED);
+                    labelText.setText("Invalid");
                     controller.exportToFileButton.setVisible(false);
                     controller.exportToTextAreaButton.setVisible(false);
                     fixErrorsButton.setDisable(false);
@@ -137,6 +165,8 @@ public class Controller {
                         controller.outputTextArea.setText(controller.outputTextArea.getText() + error + "\n");
                     }
                 } else {
+                    labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+                    labelText.setTextFill(Color.GREEN);
                     labelText.setText("Valid");
                     fixErrorsButton.setDisable(true);
                     formatButton.setDisable(false);
@@ -158,6 +188,8 @@ public class Controller {
     @FXML
     protected void onFormatClick() {
         if (xmlFile == null) {
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+            labelText.setTextFill(Color.RED);
             labelText.setText("Choose an XML file");
         } else {
             xmlFile.format();
@@ -186,11 +218,121 @@ public class Controller {
 
     private Controller openOutputWindow(String stageName, String resource) throws IOException {
         outputLoader = new FXMLLoader(Main.class.getResource(resource));
-        Scene scene = new Scene(outputLoader.load(), 640, 480);
+        Scene scene = new Scene(outputLoader.load());
         Stage stage = new Stage();
         stage.setTitle(stageName);
         stage.setScene(scene);
         stage.show();
         return outputLoader.getController();
+    }
+
+    @FXML
+    protected void onNetworkAnalysisClick() throws IOException {
+        xmlFile.xmlToGraph();
+        FXMLLoader outputLoader = new FXMLLoader(Main.class.getResource("network-analysis-view.fxml"));
+        Scene scene = new Scene(outputLoader.load(), 640, 250);
+        Stage stage = new Stage();
+        stage.setTitle("Network Analysis");
+        stage.setScene(scene);
+        stage.show();
+//        System.out.println(xmlFile.getXml());
+//        System.out.println(mainTextArea.getText());
+    }
+
+    @FXML
+    protected void onMostInfClick() {
+        Controller controller = mainLoader.getController();
+        xmlFile = controller.getXmlFile();
+        User user = xmlFile.getMostInfluencer();
+        resultLabel.setFont(Font.font("arial", FontWeight.BOLD, 20));
+        resultLabel.setText("Most Influencer User\nName: " + user.getName() + "\n" + "ID: " + user.getId());
+    }
+
+    @FXML
+    protected void onMostActiveClick() {
+        Controller controller = mainLoader.getController();
+        xmlFile = controller.getXmlFile();
+        User user = xmlFile.getMostActive();
+        resultLabel.setFont(Font.font("arial", FontWeight.BOLD, 20));
+        resultLabel.setText("Most Active User\nName: " + user.getName() + "\n" + "ID: " + user.getId());
+    }
+
+    @FXML
+    protected void onOkClick() {
+        Controller controller = mainLoader.getController();
+        xmlFile = controller.getXmlFile();
+        resultText.setText("");
+        resultText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+        if (!inputTextField1.getText().equals("") && !inputTextField1.getText().equals("")) {
+            ArrayList<User> mutualFollowers = xmlFile.getMutualFollowers(inputTextField1.getText(), inputTextField2.getText());
+            if (mutualFollowers == null) {
+                resultText.setText("\nInvalid input");
+                return;
+            } else if (mutualFollowers.isEmpty()) {
+                resultText.setText("\nNo mutual followers");
+                return;
+            }
+            for (User user : mutualFollowers) {
+                resultText.setText(resultText.getText() + "\n" + "Name: " + user.getName() + "    " + "ID: " + user.getId() + "\n");
+            }
+        }
+    }
+
+    @FXML
+    protected void onMutualFollowersClick() throws IOException {
+        openOutputWindow("Mutual Followers", "input-window.fxml");
+    }
+
+    @FXML
+    protected void onSuggestButtonClick() throws IOException {
+        openOutputWindow("Suggest Followers", "suggest-input-window.fxml");
+    }
+
+    @FXML
+    protected void onSuggestOkClick() {
+        Controller controller = mainLoader.getController();
+        xmlFile = controller.getXmlFile();
+        resultText.setText("");
+        resultText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+        if (!inputTextField1.getText().equals("")) {
+            ArrayList<User> suggestedFollowers = xmlFile.suggestFollowers(inputTextField1.getText());
+            if (suggestedFollowers == null) {
+                resultText.setText("\nInvalid input");
+                return;
+            } else if (suggestedFollowers.isEmpty()) {
+                resultText.setText("\nNo suggested followers");
+                return;
+            }
+            for (User user : suggestedFollowers) {
+                resultText.setText(resultText.getText() + "\n" + "Name: " + user.getName() + "    " + "ID: " + user.getId() + "\n");
+            }
+        }
+    }
+
+    @FXML
+    protected void onSearchPostClick() throws IOException {
+        xmlFile.xmlToGraph();
+        openOutputWindow("Search Posts", "search-input-window.fxml");
+    }
+
+    @FXML
+    protected void onPostOkClick() {
+        Controller controller = mainLoader.getController();
+        xmlFile = controller.getXmlFile();
+        resultText.setText("");
+        resultText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+        if (!inputTextField1.getText().equals("")) {
+            ArrayList<Post> posts = xmlFile.searchPosts(inputTextField1.getText());
+            if (posts == null) {
+                resultText.setText("\nInvalid input");
+                return;
+            } else if (posts.isEmpty()) {
+                resultText.setText("\nNo Posts Found");
+                return;
+            }
+            for (Post post : posts) {
+                resultText.setText(resultText.getText() + "\n" + post.getBody() + "\n\n");
+            }
+        }
     }
 }

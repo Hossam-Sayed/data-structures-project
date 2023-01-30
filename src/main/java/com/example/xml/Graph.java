@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class Graph {
 
-    private ArrayList<User> users;
+    private final ArrayList<User> users;
 
     Graph() {
         users = new ArrayList<>();
@@ -24,8 +24,8 @@ class User {
     private int follows = 0;
     private String id;
     private String name;
-    private ArrayList<Post> posts;
-    private ArrayList<User> followers;
+    private final ArrayList<Post> posts;
+    private final ArrayList<User> followers;
 
     public User() {
         posts = new ArrayList<>();
@@ -67,12 +67,16 @@ class User {
     public ArrayList<Post> getPosts() {
         return posts;
     }
+
+    public String getName() {
+        return name;
+    }
 }
 
 class Post {
 
     private String body;
-    private ArrayList<String> topics;
+    private final ArrayList<String> topics;
 
     Post() {
         topics = new ArrayList<>();

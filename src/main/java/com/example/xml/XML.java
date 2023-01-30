@@ -39,7 +39,9 @@ public class XML {
             xml.deleteCharAt(xml.length() - 1);
             this.xml = xml.toString();
             reader.close();
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            // Ignored as we use file chooser in GUI so no possible errors will occur
+            e.getStackTrace();
         }
     }
 
@@ -63,7 +65,7 @@ public class XML {
         getErrors(true);
     }
 
-    boolean isValidold() {
+    boolean isValidOld() {
         if (valid) {
             return true;
         }
@@ -78,21 +80,21 @@ public class XML {
 
     ArrayList<String> getErrors(boolean fix) {
         ArrayList<String> errors = new ArrayList<>();
-        Stack<String> opennedTags = new Stack<>();
+        Stack<String> openedTags = new Stack<>();
         StringBuilder fixedXML = fix ? new StringBuilder(xml.length() * 2) : null;
-        int addedchar = 0;
+        int addedChar = 0;
         boolean inTag = false;
         boolean hasValue = false;
         int line = 1;
         String tag = "";
-        char[] xmlchars = xml.toCharArray();
-        for (int i = 0; i < xmlchars.length; i++) {
+        char[] xmlChars = xml.toCharArray();
+        for (int i = 0; i < xmlChars.length; i++) {
             if (!inTag) {
-                switch (xmlchars[i]) {
+                switch (xmlChars[i]) {
                     case '\n' -> {
                         line++;
                         if (fix) {
-                            fixedXML.append(xmlchars[i]);
+                            fixedXML.append(xmlChars[i]);
                         }
                     }
                     case '<' -> {
@@ -100,61 +102,64 @@ public class XML {
                         tag = "<";
                     }
                     default -> {
-                        if (!(xmlchars[i] == ' ' || xmlchars[i] == '\t')) {
-                            if (opennedTags.empty()) {
+                        if (!(xmlChars[i] == ' ' || xmlChars[i] == '\t')) {
+                            if (openedTags.empty()) {
                                 errors.add("Line " + line + ": Attribute value with no opened tags");
+                                while (i < xmlChars.length && xmlChars[i] != '\n' && xmlChars[i] != '<') {
+                                    i++;
+                                }
                             } else {
                                 hasValue = true;
-                                while (i < xmlchars.length && !(xmlchars[i] == '\n' || xmlchars[i] == '<')) {
+                                while (i < xmlChars.length && !(xmlChars[i] == '\n' || xmlChars[i] == '<')) {
                                     if (fix) {
-                                        fixedXML.append(xmlchars[i]);
+                                        fixedXML.append(xmlChars[i]);
                                     }
                                     i++;
                                 }
-                                i--;
                             }
+                            i--;
                         } else {
                             if (fix) {
-                                fixedXML.append(xmlchars[i]);
+                                fixedXML.append(xmlChars[i]);
                             }
                         }
                     }
                 }
             } else if (inTag) {
-                tag += xmlchars[i];
-                if (xmlchars[i] == '>') {
+                tag += xmlChars[i];
+                if (xmlChars[i] == '>') {
                     if (isOpeningTag(tag)) {
-                        if (!opennedTags.empty() && hasValue) {
-                            errors.add("Line " + line + ": Tag " + opennedTags.peek()
-                                    + " must be closed before openning " + tag
-                                    + " tag, as " + opennedTags.peek() + " has attribute value");
+                        if (!openedTags.empty() && hasValue) {
+                            errors.add("Line " + line + ": Tag " + openedTags.peek()
+                                    + " must be closed before opening " + tag
+                                    + " tag, as " + openedTags.peek() + " has attribute value");
                             if (fix) {
                                 fixedXML.append("</");
-                                fixedXML.append(opennedTags.peek().substring(1));
+                                fixedXML.append(openedTags.peek().substring(1));
                             }
-                            opennedTags.pop();
+                            openedTags.pop();
                             hasValue = false;
                         }
-                        opennedTags.push(tag);
+                        openedTags.push(tag);
                         if (fix) {
                             fixedXML.append(tag);
                         }
                     } else if (isClosingTag(tag)) {
-                        if (!opennedTags.empty() && arePairedTags(opennedTags.peek(), tag)) {
-                            opennedTags.pop();
+                        if (!openedTags.empty() && arePairedTags(openedTags.peek(), tag)) {
+                            openedTags.pop();
                             hasValue = false;
                             if (fix) {
                                 fixedXML.append(tag);
                             }
-                        } else if (!opennedTags.empty() && !arePairedTags(opennedTags.peek(), tag)) {
+                        } else if (!openedTags.empty() && !arePairedTags(openedTags.peek(), tag)) {
                             Stack<String> unclosedtags = new Stack<>();
-                            while (!opennedTags.empty() && !arePairedTags(opennedTags.peek(), tag)) {
-                                unclosedtags.push(opennedTags.pop());
+                            while (!openedTags.empty() && !arePairedTags(openedTags.peek(), tag)) {
+                                unclosedtags.push(openedTags.pop());
                             }
-                            if (opennedTags.empty()) {
-                                errors.add("Line " + line + ": No openning tag for closing tag " + tag);
+                            if (openedTags.empty()) {
+                                errors.add("Line " + line + ": No opening tag for closing tag " + tag);
                                 while (!unclosedtags.empty()) {
-                                    opennedTags.push(unclosedtags.pop());
+                                    openedTags.push(unclosedtags.pop());
                                 }
                             } else {
                                 while (!unclosedtags.empty()) {
@@ -166,7 +171,7 @@ public class XML {
                                     }
                                     unclosedtags.pop();
                                 }
-                                opennedTags.pop();
+                                openedTags.pop();
                                 if (fix) {
                                     fixedXML.append(tag);
                                 }
@@ -178,13 +183,13 @@ public class XML {
                 }
             }
         }
-        while (!opennedTags.empty()) {
-            errors.add("Expected closing tag for " + opennedTags.peek() + " before the end of the file");
+        while (!openedTags.empty()) {
+            errors.add("Expected closing tag for " + openedTags.peek() + " before the end of the file");
             if (fix) {
                 fixedXML.append("</");
-                fixedXML.append(opennedTags.peek().substring(1));
+                fixedXML.append(openedTags.peek().substring(1));
             }
-            opennedTags.pop();
+            openedTags.pop();
         }
         if (fix) {
             this.xml = fixedXML.toString();
@@ -276,8 +281,10 @@ public class XML {
 
     // O(n), n is the length of the XML file
     void xmlToGraph() {
-        if (!valid || !sliced) {
+        if (!valid) {
             return;
+        } else if (!sliced) {
+            sliceXML();
         }
         setMaxAndMinIds();
         xmlGraph = new Graph();
@@ -303,13 +310,13 @@ public class XML {
                     case "<id>" -> {
                         int index = Integer.parseInt(item) - min; // Calculate index to access dummy
                         s.pop(); // Pop ID tag from stack top
-                        if (s.peek().equals("<follower>")) {  // Current ID belogs to a follower
+                        if (s.peek().equals("<follower>")) {  // Current ID belongs to a follower
                             if (dummy[index] == null) { // If we haven't met this follower before
                                 dummy[index] = new User(); // Add this follower to dummy list
                             }
                             dummy[index].incFollows(); // Increment the follower's follows by one
                             user.addFollower(dummy[index]); // Add this follower to followers list of current user
-                        } else { // Current ID belogs to a user
+                        } else { // Current ID belongs to a user
                             if (dummy[index] == null) { // If we haven't met this user before
                                 user = new User(); // Set this user as current user
                                 dummy[index] = user; // Add this user to dummy list
@@ -331,37 +338,20 @@ public class XML {
 
     String formatingNode(String str, TreeNode node) {
         StringBuilder addition = new StringBuilder();
-        //String addition = "";
         addition.append(str + "\t");
-        //addition += str;
-        //addition += "\t";
         StringBuilder strs = new StringBuilder();
-        //String strs = "";
         strs.append("<" + node.getTagName() + ">");
-        //strs += "<" + (node.getTagName()) + ">";
         ArrayList<TreeNode> childrens = node.getChildren();
         if (!childrens.isEmpty()) {
             for (int i = 0; i < childrens.size(); i++) {
                 strs.append(addition);
-                //strs += addition;
                 strs.append(formatingNode(addition.toString(), childrens.get(i)));
-                //strs += formatingNode(addition, childrens.get(i));
             }
         } else {
             strs.append(addition + node.getData() + str + "</" + node.getTagName() + ">");
-            //strs += (addition);
-            //strs += (node.getData());
-            //strs += str;
-            //strs += "</";
-            //strs += (node.getTagName());
-            //strs += ">";
             return strs.toString();
         }
         strs.append(str + "</" + node.getTagName() + ">");
-        //strs += str;
-        //strs += "</";
-        //strs += (node.getTagName());
-        //strs += ">";
         return strs.toString();
     }
 
@@ -376,9 +366,6 @@ public class XML {
         }
         xml = str;
     }
-
-
-
 
 
     void stringToXmlFile(String path) {
@@ -422,19 +409,13 @@ public class XML {
     }
 
 
-
     String jsonFormatingNode(String str, TreeNode node) {
         StringBuilder addition = new StringBuilder();
-        //String addition = "";
         addition.append(str);
-        //addition += str;
-        if(!addition.toString().equals(" ")) {
+        if (!addition.toString().equals(" ")) {
             addition.append("\t");
-            //addition += "\t";
         }
         StringBuilder strs = new StringBuilder();
-        //String strs = "";
-        //String type = "";
         ArrayList<TreeNode> childrens = node.getChildren();
         ArrayList<TreeNode> sortedChildrens = new ArrayList<>();
         int[] visitedChildrens = new int[childrens.size()];
@@ -455,68 +436,41 @@ public class XML {
             }
         }
 
-/*
-        for(TreeNode n: sortedChildrens)
-            System.out.println(n.getTagName());
-        System.out.println("");
-*/
-
         if (!sortedChildrens.isEmpty()) {
-           /* if (childrens.get(0).getData() != null) {
-                type = "{";
-            } else {
-                type = "[";
-            }
-            */
             for (int i = 0; i < sortedChildrens.size(); i++) {
                 if (i < sortedChildrens.size() - 1 && sortedChildrens.get(i).getTagName().equals(sortedChildrens.get(i + 1).getTagName())) {
-                    strs.append(addition +"\"" + (sortedChildrens.get(i).getTagName()) + "\":" + "[");
-                    //strs += (addition +"\"" + (sortedChildrens.get(i).getTagName()) + "\":" + "[");
-                    //while(sortedChildrens.get(i).getTagName().equals(sortedChildrens.get(i+1).getTagName()) && (i < sortedChildrens.size()-2)) {
+                    strs.append(addition + "\"" + (sortedChildrens.get(i).getTagName()) + "\":" + "[");
                     String s = sortedChildrens.get(i).getTagName();
                     while (i < sortedChildrens.size() && sortedChildrens.get(i).getTagName().equals(s)) {
-                        if(sortedChildrens.get(i).getChildren()!=null && sortedChildrens.get(i).getChildren().size()>=1) {
+                        if (sortedChildrens.get(i).getChildren() != null && sortedChildrens.get(i).getChildren().size() >= 1) {
                             strs.append(addition + "\t{");
-                            strs.append(jsonFormatingNode(addition.toString()+"\t", sortedChildrens.get(i)));
-                            if(strs.charAt(strs.length() - 1)==','){
+                            strs.append(jsonFormatingNode(addition.toString() + "\t", sortedChildrens.get(i)));
+                            if (strs.charAt(strs.length() - 1) == ',') {
                                 strs.deleteCharAt(strs.length() - 1);
                             }
                             strs.append(addition + "\t},");
-                        }
-                        else{
+                        } else {
                             strs.append(jsonFormatingNode(addition.toString(), sortedChildrens.get(i)));
                         }
-                        //strs += jsonFormatingNode(addition, sortedChildrens.get(i));
                         i++;
                     }
                     i--;
-                    //delete last character, add ]
-                    if(strs.charAt(strs.length() - 1)==','){
+                    if (strs.charAt(strs.length() - 1) == ',') {
                         strs.deleteCharAt(strs.length() - 1);
                     }
-                    strs.append(addition+"],");
+                    strs.append(addition + "],");
                 } else {
-                    //strs += addition;
-                    if (sortedChildrens.get(i).getChildren()!=null
-                            && !sortedChildrens.get(i).getChildren().isEmpty()){
-                        //  || (sortedChildrens.get(i).getChildren().size()==1
-                        // && sortedChildrens.get(i).getChildren().get(0).getChildren().isEmpty()))) {
-                        strs.append(addition + "\"" + sortedChildrens.get(i).getTagName()+ "\":" + "{");
-                        //strs += addition;
-                        //strs += ("\"" + (sortedChildrens.get(i).getTagName()) + "\":" + "{");
+                    if (sortedChildrens.get(i).getChildren() != null
+                            && !sortedChildrens.get(i).getChildren().isEmpty()) {
+                        strs.append(addition + "\"" + sortedChildrens.get(i).getTagName() + "\":" + "{");
                         strs.append(jsonFormatingNode(addition.toString(), sortedChildrens.get(i)));
-                        //strs += jsonFormatingNode(addition, sortedChildrens.get(i));
-                        //delete last character, add }
-                        if(strs.charAt(strs.length() - 1)==','){
+                        if (strs.charAt(strs.length() - 1) == ',') {
                             strs.deleteCharAt(strs.length() - 1);
                         }
-                        strs.append(addition+"},");
+                        strs.append(addition + "},");
                     } else {
-                        strs.append(addition + "\"" + sortedChildrens.get(i).getTagName() +"\":");
-                        //strs += addition;
-                        //strs += ("\"" + (sortedChildrens.get(i).getTagName()) + "\":");
+                        strs.append(addition + "\"" + sortedChildrens.get(i).getTagName() + "\":");
                         strs.append(jsonFormatingNode(" ", sortedChildrens.get(i)));
-                        //strs +=jsonFormatingNode(" ", sortedChildrens.get(i));
                     }
                 }
 
@@ -524,29 +478,8 @@ public class XML {
             }
 
         } else {
-            strs.append(addition + "\""+node.getData() + "\"" +",");
-            //strs += addition;
-            //strs += node.getData();
-            //strs += ",";
+            strs.append(addition + "\"" + node.getData() + "\"" + ",");
         }
-        /*
-        else {
-            strs += "\t\"" + (node.getTagName()) + "\":";
-            //strs += (addition + "\t");
-            strs += (" \"" + node.getData() + "\"");
-            //strs += str;
-            //strs += "\t";
-            strs += ",";
-            return strs;
-        }
-        strs += str;
-        strs += "\t";
-        if (type == "{") {
-            strs += "}";
-        } else {
-            strs += "]";
-        }
-         */
         return strs.toString();
 
     }
@@ -561,13 +494,13 @@ public class XML {
         //String str = "{\n";
         TreeNode node = xmlTree.getRoot();
         if (node != null) {
-            str.append("\t" +"\""+ node.getTagName() +"\""+":{");
+            str.append("\t" + "\"" + node.getTagName() + "\"" + ":{");
             //str +="\t" +"\""+ node.getTagName() +"\""+":{";
             str.append(jsonFormatingNode("\n\t", node));
             //str += jsonFormatingNode("\n\t", node);
 
         }
-        if(str.charAt(str.length() - 1)==','){
+        if (str.charAt(str.length() - 1) == ',') {
             str.deleteCharAt(str.length() - 1);
         }
         str.append("\n\t}" + "\n}");
@@ -575,11 +508,6 @@ public class XML {
         //str += "\n}";
         return str.toString();
     }
-
-
-
-
-
 
     // O(n), n is the number of users
     User getMostActive() {
@@ -609,104 +537,85 @@ public class XML {
 
     // O(n), n is the number of users in the graph
     public ArrayList<User> getMutualFollowers(String id1, String id2) {
-        ArrayList<User> mutualFollowers = new ArrayList<>();
-        User dummy[] = new User[max - min + 1];
-        for (User user : xmlGraph.getUsers()) {
-            if (user.getId().equals(id1)) {
-                for (User follower : user.getFollowers()) {
-                    int index = Integer.parseInt(follower.getId()) - min;
-                    dummy[index] = follower;
-                }
-                break;
-            }
-        }
-        for (User user : xmlGraph.getUsers()) {
-            if (user.getId().equals(id2)) {
-                for (User follower : user.getFollowers()) {
-                    int index = Integer.parseInt(follower.getId()) - min;
-                    if (dummy[index] != null) {
-                        mutualFollowers.add(dummy[index]);
+        try {
+            ArrayList<User> mutualFollowers = new ArrayList<>();
+            User dummy[] = new User[max - min + 1];
+            ArrayList<User> users = xmlGraph.getUsers();
+
+            int i;
+            for (i = 0; i < users.size(); i++) {
+                if (users.get(i).getId().equals(id1)) {
+                    for (User follower : users.get(i).getFollowers()) {
+                        int index = Integer.parseInt(follower.getId()) - min;
+                        dummy[index] = follower;
                     }
+                    break;
                 }
-                break;
             }
-        }
 
-        return (mutualFollowers.isEmpty()) ? null : mutualFollowers;
-    }
-
-    // O(n), n is the maximum number of followers for any user (number of users in the graph - 1)
-    public ArrayList<User> getMutualFollowers(User user1, User user2) {
-        ArrayList<User> mutualFollowers = new ArrayList<>();
-        User dummy[] = new User[max - min + 1];
-        for (User follower : user1.getFollowers()) {
-            int index = Integer.parseInt(follower.getId()) - min;
-            dummy[index] = follower;
-        }
-        for (User follower : user2.getFollowers()) {
-            int index = Integer.parseInt(follower.getId()) - min;
-            if (dummy[index] != null) {
-                mutualFollowers.add(dummy[index]);
+            if (i == users.size()) {
+                return null;
             }
-        }
-        return (mutualFollowers.isEmpty()) ? null : mutualFollowers;
-    }
 
-    enum Relativity {DISTANT, FOF, FOLLOWER, ME}
-
-    public ArrayList<User> suggestFollowers(User user) {
-        ArrayList<User> suggestedList = new ArrayList<>();
-        int dummy[] = new int[max - min + 1];
-        Relativity[] relatives = new Relativity[max - min + 1];
-        relatives[Integer.parseInt(user.getId()) - min] = Relativity.ME;
-        for (User follower : user.getFollowers()) {
-            int followerIndex = Integer.parseInt(follower.getId()) - min;
-            relatives[followerIndex] = Relativity.FOLLOWER;
-            for (User distantFollower : follower.getFollowers()) {
-                int index = Integer.parseInt(distantFollower.getId()) - min;
-                if (relatives[index] == Relativity.ME || relatives[index] == Relativity.FOLLOWER) {
-                    continue;
-                } else {
-                    if (dummy[index] == 0) {
-                        dummy[index]++;
-                        suggestedList.add(distantFollower);
+            for (i = 0; i < users.size(); i++) {
+                if (users.get(i).getId().equals(id2)) {
+                    for (User follower : users.get(i).getFollowers()) {
+                        int index = Integer.parseInt(follower.getId()) - min;
+                        if (dummy[index] != null) {
+                            mutualFollowers.add(dummy[index]);
+                        }
                     }
+                    break;
                 }
             }
+
+            if (i == users.size()) {
+                return null;
+            }
+
+            return mutualFollowers;
+        } catch (Exception e) {
+            return null;
         }
-        return (suggestedList.isEmpty()) ? null : suggestedList;
     }
+
+    enum Relativity {FOLLOWER, ME}
 
     public ArrayList<User> suggestFollowers(String id) {
-        User user = null;
-        for (User user1 : xmlGraph.getUsers()) {
-            if (user1.getId().equals(id)) {
-                user = user1;
-                break;
+        try {
+            User user = null;
+            for (User user1 : xmlGraph.getUsers()) {
+                if (user1.getId().equals(id)) {
+                    user = user1;
+                    break;
+                }
             }
-        }
-        ArrayList<User> suggestedList = new ArrayList<>();
-        int dummy[] = new int[max - min + 1];
-        Relativity[] relatives = new Relativity[max - min + 1];
-        relatives[Integer.parseInt(user.getId()) - min] = Relativity.ME;
-        for (User follower : user.getFollowers()) {
-            int followerIndex = Integer.parseInt(follower.getId()) - min;
-            relatives[followerIndex] = Relativity.FOLLOWER;
-        }
-        for (User follower : user.getFollowers()) {
-            for (User distantFollower : follower.getFollowers()) {
-                int index = Integer.parseInt(distantFollower.getId()) - min;
-                if (relatives[index] == Relativity.ME || relatives[index] == Relativity.FOLLOWER) {
-                    continue;
-                } else {
-                    if (dummy[index] == 0) {
-                        dummy[index]++;
-                        suggestedList.add(distantFollower);
+            ArrayList<User> suggestedList = new ArrayList<>();
+            int dummy[] = new int[max - min + 1];
+            Relativity[] relatives = new Relativity[max - min + 1];
+            if (Integer.parseInt(id) > max || Integer.parseInt(id) < min) return null;
+            relatives[Integer.parseInt(user.getId()) - min] = Relativity.ME;
+            for (User follower : user.getFollowers()) {
+                int followerIndex = Integer.parseInt(follower.getId()) - min;
+                relatives[followerIndex] = Relativity.FOLLOWER;
+            }
+            for (User follower : user.getFollowers()) {
+                for (User distantFollower : follower.getFollowers()) {
+                    int index = Integer.parseInt(distantFollower.getId()) - min;
+                    if (relatives[index] == Relativity.ME || relatives[index] == Relativity.FOLLOWER) {
+                        continue;
+                    } else {
+                        if (dummy[index] == 0) {
+                            dummy[index]++;
+                            suggestedList.add(distantFollower);
+                        }
                     }
                 }
             }
+            return suggestedList;
+        } catch (Exception e) {
+            return null;
         }
-        return (suggestedList.isEmpty()) ? null : suggestedList;
     }
 
     public ArrayList<Post> searchPosts(String searchWord) {
@@ -741,7 +650,7 @@ public class XML {
             }
         }
 
-        return (searchedPosts.isEmpty()) ? null : searchedPosts;
+        return searchedPosts;
     }
 
     // O(n), n is the length of the XML file
@@ -755,15 +664,15 @@ public class XML {
         }
     }
 
-    //check if passed openning and closing tags match
-    private boolean arePairedTags(String openningTag, String closingTag) {
-        return removeAngleBrackets(openningTag).equals(closingTag.substring(2, closingTag.length() - 1));
+    //check if passed opening and closing tags match
+    private boolean arePairedTags(String openingTag, String closingTag) {
+        return removeAngleBrackets(openingTag).equals(closingTag.substring(2, closingTag.length() - 1));
     }
 
     private boolean isOpeningTag(String str) {
         return (isTag(str) // It is a tag^
                 && str.charAt(1) != '/' // Not a closed tag
-                && str.charAt(1) != '!' // Not a commnet
+                && str.charAt(1) != '!' // Not a comment
                 && str.charAt(1) != '?'); // Not a header
     }
 

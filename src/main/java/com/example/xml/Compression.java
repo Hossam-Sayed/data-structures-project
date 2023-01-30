@@ -74,7 +74,8 @@ public class Compression {
             //illustrating flush() method
             os.flush();
         } catch (IOException ex) {
-//            Logger.getLogger(Compression.class.getName()).log(Level.SEVERE, null, ex);
+            // Ignored as we use file chooser in GUI so no possible errors will occur
+            ex.getStackTrace();
         }
     }
 
@@ -84,7 +85,8 @@ public class Compression {
             //read the compressed file
             fileContent = Files.readAllBytes(file.toPath());
         } catch (IOException ex) {
-//            Logger.getLogger(Compression.class.getName()).log(Level.SEVERE, null, ex);
+            // Ignored as we use file chooser in GUI so no possible errors will occur
+            ex.getStackTrace();
         }
         return fileContent;
     }
