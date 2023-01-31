@@ -84,7 +84,7 @@ public class Controller {
     protected void onMinifyClick() throws IOException {
         if (xmlFile == null) {
 
-            labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
             labelText.setTextFill(Color.RED);
             labelText.setText("Choose an XML file");
         } else {
@@ -114,7 +114,7 @@ public class Controller {
     @FXML
     protected void compress() {
         if (xmlFile == null) {
-            labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
             labelText.setTextFill(Color.RED);
             labelText.setText("Choose an XML file");
         } else {
@@ -142,12 +142,12 @@ public class Controller {
     @FXML
     protected void onValidateClick() throws IOException {
         if (xmlFile == null) {
-            labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
             labelText.setTextFill(Color.RED);
             labelText.setText("Choose an XML file");
         } else {
             if (xmlFile.isValid()) {
-                labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+                labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
                 labelText.setTextFill(Color.GREEN);
                 labelText.setText("Valid");
             } else {
@@ -155,7 +155,7 @@ public class Controller {
                 xmlFile.setValid(errors == null);
                 if (errors != null) {
                     Controller controller = openOutputWindow("Errors", "output-view.fxml");
-                    labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+                    labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
                     labelText.setTextFill(Color.RED);
                     labelText.setText("Invalid");
                     controller.exportToFileButton.setVisible(false);
@@ -165,7 +165,7 @@ public class Controller {
                         controller.outputTextArea.setText(controller.outputTextArea.getText() + error + "\n");
                     }
                 } else {
-                    labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+                    labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
                     labelText.setTextFill(Color.GREEN);
                     labelText.setText("Valid");
                     fixErrorsButton.setDisable(true);
@@ -183,12 +183,13 @@ public class Controller {
         xmlFile.fixErrors();
         mainTextArea.setText(xmlFile.getXml());
         fixErrorsButton.setDisable(true);
+        labelText.setText("");
     }
 
     @FXML
     protected void onFormatClick() {
         if (xmlFile == null) {
-            labelText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
             labelText.setTextFill(Color.RED);
             labelText.setText("Choose an XML file");
         } else {
@@ -216,27 +217,10 @@ public class Controller {
         }
     }
 
-    private Controller openOutputWindow(String stageName, String resource) throws IOException {
-        outputLoader = new FXMLLoader(Main.class.getResource(resource));
-        Scene scene = new Scene(outputLoader.load());
-        Stage stage = new Stage();
-        stage.setTitle(stageName);
-        stage.setScene(scene);
-        stage.show();
-        return outputLoader.getController();
-    }
-
     @FXML
     protected void onNetworkAnalysisClick() throws IOException {
         xmlFile.xmlToGraph();
-        FXMLLoader outputLoader = new FXMLLoader(Main.class.getResource("network-analysis-view.fxml"));
-        Scene scene = new Scene(outputLoader.load(), 640, 250);
-        Stage stage = new Stage();
-        stage.setTitle("Network Analysis");
-        stage.setScene(scene);
-        stage.show();
-//        System.out.println(xmlFile.getXml());
-//        System.out.println(mainTextArea.getText());
+        openOutputWindow("Network Analysis", "network-analysis-view.fxml");
     }
 
     @FXML
@@ -262,17 +246,20 @@ public class Controller {
         Controller controller = mainLoader.getController();
         xmlFile = controller.getXmlFile();
         resultText.setText("");
-        resultText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+        resultText.setFont(Font.font("arial", FontWeight.BOLD, 11));
         if (!inputTextField1.getText().equals("") && !inputTextField1.getText().equals("")) {
             ArrayList<User> mutualFollowers = xmlFile.getMutualFollowers(inputTextField1.getText(), inputTextField2.getText());
             if (mutualFollowers == null) {
+                resultText.setStyle("-fx-text-fill: red ;");
                 resultText.setText("\nInvalid input");
                 return;
             } else if (mutualFollowers.isEmpty()) {
+                resultText.setStyle("-fx-text-fill: red ;");
                 resultText.setText("\nNo mutual followers");
                 return;
             }
             for (User user : mutualFollowers) {
+                resultText.setStyle("-fx-text-fill: black ;");
                 resultText.setText(resultText.getText() + "\n" + "Name: " + user.getName() + "    " + "ID: " + user.getId() + "\n");
             }
         }
@@ -297,13 +284,16 @@ public class Controller {
         if (!inputTextField1.getText().equals("")) {
             ArrayList<User> suggestedFollowers = xmlFile.suggestFollowers(inputTextField1.getText());
             if (suggestedFollowers == null) {
+                resultText.setStyle("-fx-text-fill: red ;");
                 resultText.setText("\nInvalid input");
                 return;
             } else if (suggestedFollowers.isEmpty()) {
+                resultText.setStyle("-fx-text-fill: red ;");
                 resultText.setText("\nNo suggested followers");
                 return;
             }
             for (User user : suggestedFollowers) {
+                resultText.setStyle("-fx-text-fill: black ;");
                 resultText.setText(resultText.getText() + "\n" + "Name: " + user.getName() + "    " + "ID: " + user.getId() + "\n");
             }
         }
@@ -324,15 +314,29 @@ public class Controller {
         if (!inputTextField1.getText().equals("")) {
             ArrayList<Post> posts = xmlFile.searchPosts(inputTextField1.getText());
             if (posts == null) {
+                resultText.setStyle("-fx-text-fill: red ;");
                 resultText.setText("\nInvalid input");
                 return;
             } else if (posts.isEmpty()) {
+                resultText.setStyle("-fx-text-fill: red ;");
                 resultText.setText("\nNo Posts Found");
                 return;
             }
             for (Post post : posts) {
+                resultText.setStyle("-fx-text-fill: black ;");
                 resultText.setText(resultText.getText() + "\n" + post.getBody() + "\n\n");
             }
         }
+    }
+
+
+    private Controller openOutputWindow(String stageName, String resource) throws IOException {
+        outputLoader = new FXMLLoader(Main.class.getResource(resource));
+        Scene scene = new Scene(outputLoader.load());
+        Stage stage = new Stage();
+        stage.setTitle(stageName);
+        stage.setScene(scene);
+        stage.show();
+        return outputLoader.getController();
     }
 }

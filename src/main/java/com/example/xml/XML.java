@@ -11,7 +11,7 @@ import java.util.Stack;
 
 public class XML {
 
-    int min, max = 0;
+    int min, max = 0; // Min and max indices that correspond to min and max Users IDs
 
     public void setValid(boolean valid) {
         this.valid = valid;
@@ -20,8 +20,8 @@ public class XML {
     private boolean valid = false;
     private boolean sliced = false;
     private String xml;
-    private Tree xmlTree;
-    private Graph xmlGraph;
+    private Tree xmlTree; // Tree representation of the XML file
+    private Graph xmlGraph; // Graph representation of the XML file
     private ArrayList<String> slicedXML;
 
     //O(n), where n is the number of char in xml file
@@ -248,80 +248,84 @@ public class XML {
         return minified.toString();
     }
 
-    // O(n), n is the length of the XML file
+    //     O(n), n is the length of the XML file
     void xmlToTree() {
-        if (!valid) {
+        if (!valid) { // If the XML is not valid, return
             return;
-        } else if (!sliced) {
-            sliceXML();
+        } else if (!sliced) { // If the XML is not sliced
+            sliceXML(); // Slice it
         }
-        Stack<TreeNode> s = new Stack<>();
-        for (String item : slicedXML) {
-            if (item == null || item.equals("")) ;
-            else if (isOpeningTag(item)) { // If it is an open tag
-                TreeNode root = new TreeNode(removeAngleBrackets(item));
-                if (s.isEmpty()) { // First time to push, We create the Tree object then push <users>
-                    xmlTree = new Tree(root);
+        Stack<TreeNode> s = new Stack<>(); // Instantiate a stack object
+        for (String item : slicedXML) { // Iterate over words in the XML file
+            if (item == null || item.equals("")) ; // if a word in the XML file is null or empty, skip it
+            else if (isOpeningTag(item)) { // If it is an opening tag
+                TreeNode root = new TreeNode(removeAngleBrackets(item)); // Instantiate a tree node and set its tag name
+                if (s.isEmpty()) { // If it's the first time to push, create the Tree object then push <users>
+                    xmlTree = new Tree(root); // Instantiate the tree object
                 }
-                s.push(root); // Push open tag to stack
-            } else if (isClosingTag(item)) { // If it is a closed tag
-                TreeNode child = s.peek();
-                s.pop(); // pop closed tag from stack
+                s.push(root); // Push opening tag to stack
+            } else if (isClosingTag(item)) { // If it is a closing tag
+                TreeNode child = s.peek(); // Get the stack top
+                s.pop(); // Pop closing tag from stack
                 if (s.isEmpty()) {
-                    continue; // Or exit (finished the arraylist)
+                    continue; // Or exit (finished XML words)
                 }
-                TreeNode parent = s.peek();
-                parent.insertChild(child); // Make popped tag child to the tag on the top of stack
-            } else if (isTag(item)) ;
+                TreeNode parent = s.peek(); // Get the stack top again
+                parent.insertChild(child); // Make popped tag child to the tag on the stack top
+            } else if (isTag(item))
+                ; // If it is a tag (not data) but not opening or closing tags then it is either an XML header or comment, so skip it
             else { // If it is data
                 s.peek().setData(item);
             }
         }
     }
 
-    // O(n), n is the length of the XML file
+    //    O(n), n is the length of the XML file
     void xmlToGraph() {
-        if (!valid) {
+        if (!valid) { // If the XML is not valid, return
             return;
-        } else if (!sliced) {
-            sliceXML();
+        } else if (!sliced) { // If the XML is not sliced
+            sliceXML(); // Slice it
         }
-        setMaxAndMinIds();
-        xmlGraph = new Graph();
-        User user = null;
-        Post post = null;
-        User dummy[] = new User[max - min + 1];
-        Stack<String> s = new Stack<>();
-        for (String item : slicedXML) {
-            if (isOpeningTag(item)) {
-                s.push(item);
-                if (item.equals("<post>")) {
-                    post = new Post();
+        setMaxAndMinIds(); // Set the max and min indices
+        xmlGraph = new Graph(); // Instantiate a class object
+        User user = null; // Current user
+        Post post = null; // Current post
+        User[] idToUserMap = new User[max - min + 1]; // An array that maps the user's ID to the user object in O(1)
+        Stack<String> s = new Stack<>(); // Instantiate a stack object
+        for (String item : slicedXML) { // Iterate over words in the XML file
+            if (isOpeningTag(item)) { // If it is an opening tag
+                s.push(item); // Push it to the stack
+                if (item.equals("<post>")) { // If the opening tag is <post> tag
+                    post = new Post(); // Instantiate a post object to be filled later with body and topics
                 }
-            } else if (isClosingTag(item)) {
+            } else if (isClosingTag(item)) { // If it is a closing tag
                 switch (item) {
-                    case "</user>" -> xmlGraph.addUser(user); // May set user = null
-                    case "</post>" -> user.addPost(post); // May set post = null
+                    case "</user>" ->
+                            xmlGraph.addUser(user); // If the closing tag is </user> tag, add the current user to the graph
+                    case "</post>" ->
+                            user.addPost(post); // If the closing tag is </post> tag, add the current post to the current user
                 }
-                s.pop();
-            } else if (isTag(item)) ;
+                s.pop(); // Pop the stack top (the opening tag that corresponds to the found closing tag)
+            } else if (isTag(item))
+                ; // If it is a tag (not data) but not opening or closing tags then it is either an XML header or comment, so skip it
             else {
-                switch (s.peek()) {
-                    case "<id>" -> {
-                        int index = Integer.parseInt(item) - min; // Calculate index to access dummy
+                switch (s.peek()) { // Check the stack top
+                    case "<id>" -> { // If the stack top is an <id> tag
+                        int index = Integer.parseInt(item) - min; // Calculate index to access idToUserMap
                         s.pop(); // Pop ID tag from stack top
                         if (s.peek().equals("<follower>")) {  // Current ID belongs to a follower
-                            if (dummy[index] == null) { // If we haven't met this follower before
-                                dummy[index] = new User(); // Add this follower to dummy list
+                            if (idToUserMap[index] == null) { // If we haven't met this follower before
+                                idToUserMap[index] = new User(); // Add this follower to idToUserMap list
                             }
-                            dummy[index].incFollows(); // Increment the follower's follows by one
-                            user.addFollower(dummy[index]); // Add this follower to followers list of current user
+                            idToUserMap[index].incFollows(); // Increment the follower's follows by one
+                            user.addFollower(idToUserMap[index]); // Add this follower to followers list of current user
                         } else { // Current ID belongs to a user
-                            if (dummy[index] == null) { // If we haven't met this user before
+                            if (idToUserMap[index] == null) { // If we haven't met this user before
                                 user = new User(); // Set this user as current user
-                                dummy[index] = user; // Add this user to dummy list
+                                idToUserMap[index] = user; // Add this user to idToUserMap
                             } else { // We mit this user before
-                                user = dummy[index]; // Set this user as current user from dummy list
+                                user = idToUserMap[index]; // Set this user as current user from idToUserMap list
                             }
                             user.setId(item); // Set the ID of the current user
                         }
@@ -409,7 +413,7 @@ public class XML {
     }
 
 
-    String jsonFormatingNode(String str, TreeNode node) {
+    String jsonFormattingNode(String str, TreeNode node) {
         StringBuilder addition = new StringBuilder();
         addition.append(str);
         if (!addition.toString().equals(" ")) {
@@ -444,13 +448,13 @@ public class XML {
                     while (i < sortedChildrens.size() && sortedChildrens.get(i).getTagName().equals(s)) {
                         if (sortedChildrens.get(i).getChildren() != null && sortedChildrens.get(i).getChildren().size() >= 1) {
                             strs.append(addition + "\t{");
-                            strs.append(jsonFormatingNode(addition.toString() + "\t", sortedChildrens.get(i)));
+                            strs.append(jsonFormattingNode(addition.toString() + "\t", sortedChildrens.get(i)));
                             if (strs.charAt(strs.length() - 1) == ',') {
                                 strs.deleteCharAt(strs.length() - 1);
                             }
                             strs.append(addition + "\t},");
                         } else {
-                            strs.append(jsonFormatingNode(addition.toString(), sortedChildrens.get(i)));
+                            strs.append(jsonFormattingNode(addition.toString(), sortedChildrens.get(i)));
                         }
                         i++;
                     }
@@ -463,14 +467,14 @@ public class XML {
                     if (sortedChildrens.get(i).getChildren() != null
                             && !sortedChildrens.get(i).getChildren().isEmpty()) {
                         strs.append(addition + "\"" + sortedChildrens.get(i).getTagName() + "\":" + "{");
-                        strs.append(jsonFormatingNode(addition.toString(), sortedChildrens.get(i)));
+                        strs.append(jsonFormattingNode(addition.toString(), sortedChildrens.get(i)));
                         if (strs.charAt(strs.length() - 1) == ',') {
                             strs.deleteCharAt(strs.length() - 1);
                         }
                         strs.append(addition + "},");
                     } else {
                         strs.append(addition + "\"" + sortedChildrens.get(i).getTagName() + "\":");
-                        strs.append(jsonFormatingNode(" ", sortedChildrens.get(i)));
+                        strs.append(jsonFormattingNode(" ", sortedChildrens.get(i)));
                     }
                 }
 
@@ -496,7 +500,7 @@ public class XML {
         if (node != null) {
             str.append("\t" + "\"" + node.getTagName() + "\"" + ":{");
             //str +="\t" +"\""+ node.getTagName() +"\""+":{";
-            str.append(jsonFormatingNode("\n\t", node));
+            str.append(jsonFormattingNode("\n\t", node));
             //str += jsonFormatingNode("\n\t", node);
 
         }
@@ -509,157 +513,157 @@ public class XML {
         return str.toString();
     }
 
-    // O(n), n is the number of users
-    User getMostActive() {
-        User mostActive = xmlGraph.getUsers().get(0);
-        int maxFollows = mostActive.getFollows() + mostActive.getFollowers().size();
-        for (User user : xmlGraph.getUsers()) {
-            if (user.getFollows() + user.getFollowers().size() > maxFollows) {
-                maxFollows = user.getFollows() + user.getFollowers().size();
-                mostActive = user;
+    //    O(n), n is the number of users
+    User getMostActive() { // returns the most active user (first user with most followers + follows)
+        User mostActive = xmlGraph.getUsers().get(0); // Initialize the most active user as the first user
+        int maxActivityDegree = mostActive.getFollows() + mostActive.getFollowers().size(); // Initialize the max degree
+        for (User user : xmlGraph.getUsers()) { // Iterate over each user in the graph
+            if (user.getFollows() + user.getFollowers().size() > maxActivityDegree) { // If the user has a degree more than the max degree so far
+                maxActivityDegree = user.getFollows() + user.getFollowers().size(); // Update maxActivityDegree
+                mostActive = user; // Make this user the most active
             }
         }
-        return mostActive;
+        return mostActive; // Return the most active user
     }
 
-    // O(n), n is the number of users
-    User getMostInfluencer() {
-        User mostInfluencer = xmlGraph.getUsers().get(0);
-        int maxFollowers = mostInfluencer.getFollowers().size();
-        for (User user : xmlGraph.getUsers()) {
-            if (user.getFollowers().size() > maxFollowers) {
-                maxFollowers = user.getFollowers().size();
-                mostInfluencer = user;
+    //    O(n), n is the number of users
+    User getMostInfluencer() { // Returns the most active user (first user with most followers)
+        User mostInfluencer = xmlGraph.getUsers().get(0); // Initialize the most active user as the first user
+        int maxFollowers = mostInfluencer.getFollowers().size(); // Initialize the max followers
+        for (User user : xmlGraph.getUsers()) { // Iterate over each user in the graph
+            if (user.getFollowers().size() > maxFollowers) { // If the user has followers more than the max followers so far
+                maxFollowers = user.getFollowers().size(); // Update maxFollowers
+                mostInfluencer = user; // Make this user the most influencer
             }
         }
-        return mostInfluencer;
+        return mostInfluencer; // Return the most influencer user
     }
 
-    // O(n), n is the number of users in the graph
-    public ArrayList<User> getMutualFollowers(String id1, String id2) {
-        try {
-            ArrayList<User> mutualFollowers = new ArrayList<>();
-            User dummy[] = new User[max - min + 1];
-            ArrayList<User> users = xmlGraph.getUsers();
+    //    O(n), n is the max number of followers of a user
+    ArrayList<User> getMutualFollowers(String id1, String id2) { // Returns the mutual users between two users
+        try { // A try block so that any exception (invalid input parameters or no mutual followers) is handled
+            ArrayList<User> mutualFollowers = new ArrayList<>(); // A list to hold the mutual followers objects
+            User[] followersArray = new User[max - min + 1]; // An array to hold the followers of the first user
+            ArrayList<User> users = xmlGraph.getUsers(); // List of users in the graph
 
             int i;
             for (i = 0; i < users.size(); i++) {
-                if (users.get(i).getId().equals(id1)) {
-                    for (User follower : users.get(i).getFollowers()) {
-                        int index = Integer.parseInt(follower.getId()) - min;
-                        dummy[index] = follower;
+                if (users.get(i).getId().equals(id1)) { // Iterate over users until the user with the corresponding ID is found
+                    for (User follower : users.get(i).getFollowers()) { // Iterate over the followers of the first user
+                        int index = Integer.parseInt(follower.getId()) - min; // Calculate the index to access the array
+                        followersArray[index] = follower; // Add this follower to the array in the place corresponds to its ID
                     }
                     break;
                 }
             }
 
-            if (i == users.size()) {
+            if (i == users.size()) { // If the first user is not found
                 return null;
             }
 
             for (i = 0; i < users.size(); i++) {
-                if (users.get(i).getId().equals(id2)) {
-                    for (User follower : users.get(i).getFollowers()) {
-                        int index = Integer.parseInt(follower.getId()) - min;
-                        if (dummy[index] != null) {
-                            mutualFollowers.add(dummy[index]);
+                if (users.get(i).getId().equals(id2)) { // Iterate over users until the user with the corresponding ID is found
+                    for (User follower : users.get(i).getFollowers()) { // Iterate over the followers of the second user
+                        int index = Integer.parseInt(follower.getId()) - min; // Calculate the index to access the array
+                        if (followersArray[index] != null) { // If this follower is found in the array (was also a follower of the first user)
+                            mutualFollowers.add(followersArray[index]); // Add this follower to the mutual followers list
                         }
                     }
                     break;
                 }
             }
 
-            if (i == users.size()) {
+            if (i == users.size()) { // If the second user is not found
                 return null;
             }
 
-            return mutualFollowers;
+            return mutualFollowers; // Return the mutual followers list
         } catch (Exception e) {
-            return null;
+            return null; // If the input parameters are invalid or there is no mutual followers, return null
         }
     }
 
-    enum Relativity {FOLLOWER, ME}
+    enum Relativity {FOLLOWER, ME} // Enumerate to determine the relativity degree of a user to another
 
-    public ArrayList<User> suggestFollowers(String id) {
-        try {
+    //    O(n^2), n is the number of users in the graph.
+    ArrayList<User> suggestFollowers(String id) {
+        try { // A try block so that any exception (invalid input parameters or no suggested followers) is handled
             User user = null;
-            for (User user1 : xmlGraph.getUsers()) {
-                if (user1.getId().equals(id)) {
-                    user = user1;
+            for (User graphUser : xmlGraph.getUsers()) { // Iterate over users until the user with the corresponding ID is found
+                if (graphUser.getId().equals(id)) {
+                    user = graphUser;
                     break;
                 }
             }
-            ArrayList<User> suggestedList = new ArrayList<>();
-            int dummy[] = new int[max - min + 1];
-            Relativity[] relatives = new Relativity[max - min + 1];
-            if (Integer.parseInt(id) > max || Integer.parseInt(id) < min) return null;
-            relatives[Integer.parseInt(user.getId()) - min] = Relativity.ME;
-            for (User follower : user.getFollowers()) {
+            ArrayList<User> suggestedUsers = new ArrayList<>(); // A list to hold the suggested followers objects
+            int[] distantFollowersArray = new int[max - min + 1];
+            Relativity[] relatives = new Relativity[max - min + 1]; // An array that holds the relativity degree
+//            if (Integer.parseInt(id) > max || Integer.parseInt(id) < min) return null; // If the ID parameter is not an ID of a user in the graph, return null
+            relatives[Integer.parseInt(user.getId()) - min] = Relativity.ME; // Mark the current user as ME
+            for (User follower : user.getFollowers()) { // Iterate over the followers of the user and mark them as Followers
                 int followerIndex = Integer.parseInt(follower.getId()) - min;
                 relatives[followerIndex] = Relativity.FOLLOWER;
             }
-            for (User follower : user.getFollowers()) {
-                for (User distantFollower : follower.getFollowers()) {
-                    int index = Integer.parseInt(distantFollower.getId()) - min;
-                    if (relatives[index] == Relativity.ME || relatives[index] == Relativity.FOLLOWER) {
-                        continue;
-                    } else {
-                        if (dummy[index] == 0) {
-                            dummy[index]++;
-                            suggestedList.add(distantFollower);
-                        }
+            for (User follower : user.getFollowers()) { // Iterate over each follower of the user
+                for (User distantFollower : follower.getFollowers()) { // Iterate over each follower of the follower
+                    int index = Integer.parseInt(distantFollower.getId()) - min; // Calculate the index to access the array
+                    // If the distant follower is neither a follower to the user nor the user himself, and he wasn't seen before
+                    if (relatives[index] != Relativity.ME && relatives[index] != Relativity.FOLLOWER && distantFollowersArray[index] == 0) {
+                        distantFollowersArray[index]++; // Mark him as seen
+                        suggestedUsers.add(distantFollower); // Add this distant follower to the suggestedUsers
                     }
                 }
             }
-            return suggestedList;
+            return suggestedUsers; // Return the suggestedUsers list
         } catch (Exception e) {
-            return null;
+            return null; // If the input parameter is invalid or there is no suggested users, return null
         }
     }
 
-    public ArrayList<Post> searchPosts(String searchWord) {
-        searchWord = searchWord.toLowerCase();
-        ArrayList<Post> allPosts = new ArrayList<>();
-        ArrayList<Post> searchedPosts = new ArrayList<>();
-        boolean found;
 
-        for (User user : xmlGraph.getUsers()) {
+    //    O(n^2), n is the number of words in posts.
+    ArrayList<Post> searchPosts(String searchWord) { // Searches all posts for a given word
+        searchWord = searchWord.toLowerCase(); // lower casing the given word
+        ArrayList<Post> allPosts = new ArrayList<>(); // Initializes a list to hold all posts
+        ArrayList<Post> searchedPosts = new ArrayList<>(); // Initializes a list to hold the posts that contain the given word
+        boolean found; // To mark a post as found
+
+        for (User user : xmlGraph.getUsers()) { // Iterate over graph users to add all posts of each user to allPosts list
             allPosts.addAll(user.getPosts());
         }
 
         for (Post post : allPosts) {
-            found = false;
-            String[] words = post.getBody().split(" ");
+            found = false; // Mark the post as not found (at the beginning)
+            String[] words = post.getBody().split(" "); // Splitting the post into a words array
 
-            for (String word : words) {
-                if (word.toLowerCase().equals(searchWord)) {
-                    searchedPosts.add(post);
-                    found = true;
-                    break;
+            for (String word : words) { // Iterate over each word in the post
+                if (word.toLowerCase().equals(searchWord)) { // If the word in the post is the same as the given word
+                    searchedPosts.add(post); // Add this post to the searchedPosts list
+                    found = true; // Mark the post as found
+                    break; // Exit the loop as we found the post
                 }
             }
 
-            if (!found) {
-                for (String topic : post.getTopics()) {
-                    if (topic.toLowerCase().equals(searchWord)) {
-                        searchedPosts.add(post);
-                        break;
+            if (!found) { // If the post is still not found by searching its body, we search its topics
+                for (String topic : post.getTopics()) { // Iterate over each topic in the post's topics list
+                    if (topic.toLowerCase().equals(searchWord)) { // If the topic is the same as the given word
+                        searchedPosts.add(post); // Add this post to the searchedPosts list
+                        break; // Exit the loop as we found the post
                     }
                 }
             }
         }
 
-        return searchedPosts;
+        return searchedPosts; // Return the searched posts
     }
 
-    // O(n), n is the length of the XML file
-    void setMaxAndMinIds() {
-        for (int i = 0; i < slicedXML.size(); i++) {
-            if (slicedXML.get(i).equals("<id>")) {
-                int val = Integer.parseInt(slicedXML.get(i + 1));
-                min = Math.min(val, min);
-                max = Math.max(val, max);
+    //    O(n), n is the length of the XML file
+    void setMaxAndMinIds() { // Sets the minimum and maximum indices of the array
+        for (int i = 0; i < slicedXML.size(); i++) { // Iterate over every word in the XML file
+            if (slicedXML.get(i).equals("<id>")) { // If the word is <id> tag
+                int id = Integer.parseInt(slicedXML.get(i + 1)); // get the data after the <id> tag (id of the user)
+                min = Math.min(id, min); // Setting the min
+                max = Math.max(id, max); // Setting the max
             }
         }
     }
@@ -669,22 +673,28 @@ public class XML {
         return removeAngleBrackets(openingTag).equals(closingTag.substring(2, closingTag.length() - 1));
     }
 
+    //    O(1)
     private boolean isOpeningTag(String str) {
         return (isTag(str) // It is a tag^
-                && str.charAt(1) != '/' // Not a closed tag
-                && str.charAt(1) != '!' // Not a comment
+                && str.charAt(1) != '/' // Not a closing tag
+                && str.charAt(1) != '!' // Not an XML comment
                 && str.charAt(1) != '?'); // Not a header
     }
 
+    //    O(1)
     private boolean isClosingTag(String str) {
         return (isTag(str) && str.charAt(1) == '/');
     }
 
+    //    O(1)
+    // Checks if the input string is a tag (opening, closing, header or comment) or not
     boolean isTag(String str) {
         return (str.charAt(0) == '<' // Start with <
                 && str.charAt(str.length() - 1) == '>'); // End with >
     }
 
+    //    O(1)
+    // Removes the angle brackets of the input tag
     private String removeAngleBrackets(String str) {
         return str.substring(1, str.length() - 1);
     }

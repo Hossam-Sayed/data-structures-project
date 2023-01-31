@@ -2,34 +2,46 @@ package com.example.xml;
 
 import java.util.ArrayList;
 
-public class Graph {
+public class Graph { // A class that represents the social network graph
 
-    private final ArrayList<User> users;
+    private final ArrayList<User> users; // User's list
 
     Graph() {
         users = new ArrayList<>();
-    }
+    } // initialize the users list
 
     void addUser(User node) {
         users.add(node);
-    }
+    } // adding a user to the users list
 
     ArrayList<User> getUsers() {
         return users;
-    }
+    } // returns all the users in the graph
 }
 
-class User {
+class User { // A class that represents a user in the graph
 
-    private int follows = 0;
-    private String id;
-    private String name;
-    private final ArrayList<Post> posts;
-    private final ArrayList<User> followers;
+    private int follows = 0; // Keeps the number of users that follows the user instance
+    private String id; // user's ID
+    private String name; // user's name
+    private final ArrayList<Post> posts; // posts list
+    private final ArrayList<User> followers; // Followers list
 
-    public User() {
+    public User() { // constructor to initialize the posts' and follower's list
         posts = new ArrayList<>();
         followers = new ArrayList<>();
+    }
+
+    public void addPost(Post post) { // adds a post to the posts' list
+        posts.add(post);
+    }
+
+    public void addFollower(User user) { // adds a follower to the follower's list
+        followers.add(user);
+    }
+
+    public void incFollows() { // increment the number of follows of the user
+        follows++;
     }
 
     public void setId(String id) {
@@ -38,18 +50,6 @@ class User {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void addPost(Post post) {
-        posts.add(post);
-    }
-
-    public void addFollower(User user) {
-        followers.add(user);
-    }
-
-    public void incFollows() {
-        follows++;
     }
 
     public int getFollows() {
@@ -73,21 +73,21 @@ class User {
     }
 }
 
-class Post {
+class Post { // A class that represents a single post
 
-    private String body;
-    private final ArrayList<String> topics;
+    private String body; // Post's body
+    private final ArrayList<String> topics; // A list that holds the topics of each post
 
     Post() {
         topics = new ArrayList<>();
+    } // Initializes the list of topics
+
+    void addTopic(String topic) { // Adds a topic to the list of topics
+        topics.add(topic);
     }
 
     public void setBody(String body) {
         this.body = body;
-    }
-
-    void addTopic(String topic) {
-        topics.add(topic);
     }
 
     public String getBody() {

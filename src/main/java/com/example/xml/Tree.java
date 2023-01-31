@@ -2,33 +2,33 @@ package com.example.xml;
 
 import java.util.ArrayList;
 
-public class Tree {
+public class Tree { // A class that represents the tree of the XML file
 
-    private TreeNode root;
+    private final TreeNode root; // The tree's root element
 
-    public Tree(TreeNode root) {
+    Tree(TreeNode root) { // Setting the root of the tree when instantiating it
         this.root = root;
     }
 
-    public TreeNode getRoot() {
+    TreeNode getRoot() {
         return root;
     }
 }
 
-class TreeNode {
+class TreeNode { // A class that represents a tag in the XML file
 
-    private final String tagName;
-    private ArrayList<TreeNode> children;
-    private String data;
+    private final String tagName; // The tag name
+    private final ArrayList<TreeNode> children; // The tags children
+    private String data; // The tag's data
 
-    public TreeNode(String strTag) {
+    public TreeNode(String strTag) { // Initializes the tag name and the list of children
         this.tagName = strTag;
         children = new ArrayList<>();
     }
 
     void insertChild(TreeNode node) {
         children.add(node);
-    }
+    } // Inserts a child to the current tag (node)
 
     public void setData(String data) {
         this.data = data;
