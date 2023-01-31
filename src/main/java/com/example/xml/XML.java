@@ -17,13 +17,17 @@ public class XML {
         this.valid = valid;
     }
 
-    private boolean valid = false;
-    private boolean sliced = false;
-    private String xml;
+    private boolean valid = false;  //if true --> file is checked and valid, so we save the check time
+    //if false --> file is unchecked or not valid, so we check again
+    private boolean sliced = false; //if true --> file is sliced, else call slice if slicedXML is needed
+    private String xml; // A string contain the whole XML file
     private Tree xmlTree; // Tree representation of the XML file
     private Graph xmlGraph; // Graph representation of the XML file
-    private ArrayList<String> slicedXML;
+    private ArrayList<String> slicedXML;    //Store the XML file as slices
+    //Each slice is either a tag or an attribute value
 
+
+    //A constructor that construct the xml object from an input file
     //O(n), where n is the number of char in xml file
     XML(File file) {
         BufferedReader reader;
@@ -31,12 +35,15 @@ public class XML {
         try {
             reader = new BufferedReader(new FileReader(file));
             String line = reader.readLine();
+            //read line by line and append it to the string builder
             while (line != null) {
                 xml.append(line);
                 xml.append("\n");
                 line = reader.readLine();
             }
+            //delete the last appended '\n' added after the last line
             xml.deleteCharAt(xml.length() - 1);
+            //convert the string builder to a string and store it in the xml object
             this.xml = xml.toString();
             reader.close();
         } catch (IOException e) {
@@ -45,71 +52,98 @@ public class XML {
         }
     }
 
+    //A constructor that construct the xml object from an input String
     XML(String s) {
         this.xml = s;
     }
 
+    //A getter to return the String xml
     public String getXml() {
         return xml;
     }
 
+    //It calls the static method compress in compression class to compress the xml file
+    //It's input is the path in which we store the compressed file
     void compress(String path) {
         Compression.compress(this.xml, path);
     }
 
+    //It calls the static method decompress in compression class to decompress the xml file
+    //It's output is the path of the compressed file which we want to decompress
     static String decompress(String path) {
         return Compression.decompress(new File(path));
     }
 
+    //Its complexity is the same as getErrors function as it calls just getErrors
+    //It sets the boolean fix to true to fix the errors while detecting it
     void fixErrors() {
         getErrors(true);
     }
 
+    //Its functionality is done by the GUI, is it's not used
     boolean isValidOld() {
+        //if valid is set to true, then the file is already checked and valid
         if (valid) {
             return true;
         }
+        //if valid is false, the file is either not valid or not checked before
+        //So we call getErrors to check the file
+        //It sets the boolean fix to false, so it doesn't fix the errors
         ArrayList<String> errors = getErrors(false);
-        valid = errors == null ? true : valid;
+        //if no errors returned, then the file is valid, else it's not valid
+        valid = errors == null;
         return errors == null;
     }
 
+    //Getter to valid boolean
     public boolean isValid() {
         return valid;
     }
 
+    //Loop on the whole file chars to check the consistency (validity) of the file.
+    //O(n) --> n is no. of chars.
+    //Boolean fix determines if we will fix the file while checking
+    //or just validate and show the errors.
     ArrayList<String> getErrors(boolean fix) {
-        ArrayList<String> errors = new ArrayList<>();
-        Stack<String> openedTags = new Stack<>();
-        StringBuilder fixedXML = fix ? new StringBuilder(xml.length() * 2) : null;
-        int addedChar = 0;
+
+        ArrayList<String> errors = new ArrayList<>();   //used to store the errors
+        Stack<String> openedTags = new Stack<>();       //push opened tag to check consistency
+        StringBuilder fixedXML =new StringBuilder();    //used in case of fix to store the fixed XML
         boolean inTag = false;
         boolean hasValue = false;
-        int line = 1;
+        int line = 1;                               //track the current line to locate the errors
         String tag = "";
         char[] xmlChars = xml.toCharArray();
+
+        //loop on every char in the file and locate the errors
+        //if fix is true
+        //      parts with no errors are appended to the fixedXML in case of
+        //      parts with errors are fixed and appended to the fixedXML
         for (int i = 0; i < xmlChars.length; i++) {
             if (!inTag) {
                 switch (xmlChars[i]) {
-                    case '\n' -> {
+                    case '\n' -> {      //if '\n' is found, increment lines to keep track of current line
                         line++;
                         if (fix) {
                             fixedXML.append(xmlChars[i]);
                         }
                     }
-                    case '<' -> {
+                    case '<' -> {       //if not in tag and '<' is detected --> set inTag to True
                         inTag = true;
                         tag = "<";
                     }
-                    default -> {
-                        if (!(xmlChars[i] == ' ' || xmlChars[i] == '\t')) {
+                    default -> {        //any other Char with no tag opened is an error
+                        if (!(xmlChars[i] == ' ' || xmlChars[i] == '\t')) { //not white spaces
                             if (openedTags.empty()) {
                                 errors.add("Line " + line + ": Attribute value with no opened tags");
+                                //skip the rest of the error char to avoid duplicate errors
                                 while (i < xmlChars.length && xmlChars[i] != '\n' && xmlChars[i] != '<') {
                                     i++;
                                 }
-                            } else {
-                                hasValue = true;
+                            } else {                //if a tag is opened and we find data
+                                hasValue = true;    //set hasValue to true to indicate that the current tag has an attribute value
+                                //then we add all the attribute value char to the file
+                                //the end of the attribute value is either a new line or a start of a tag
                                 while (i < xmlChars.length && !(xmlChars[i] == '\n' || xmlChars[i] == '<')) {
                                     if (fix) {
                                         fixedXML.append(xmlChars[i]);
@@ -118,50 +152,62 @@ public class XML {
                                 }
                             }
                             i--;
-                        } else {
+                        } else {        //else (white spaces) --> append to fixed XML
                             if (fix) {
                                 fixedXML.append(xmlChars[i]);
                             }
                         }
                     }
                 }
-            } else if (inTag) {
-                tag += xmlChars[i];
-                if (xmlChars[i] == '>') {
+            } else {                            //if in tag (between '<' and '>')
+                tag += xmlChars[i];             // add the char to a string tag until the end of tag '>'.
+                if (xmlChars[i] == '>') {       //When reaching the end to the tag
                     if (isOpeningTag(tag)) {
-                        if (!openedTags.empty() && hasValue) {
+                        if (!openedTags.empty() && hasValue) {  //if a tag is opened after an attribute
+                            // value of another tag --> error --> a tag cannot contain a value and another child tag
                             errors.add("Line " + line + ": Tag " + openedTags.peek()
                                     + " must be closed before opening " + tag
                                     + " tag, as " + openedTags.peek() + " has attribute value");
-                            if (fix) {
-                                fixedXML.append("</");
+                            if (fix) {                      //fix by closing the tag that has an attribute
+                                fixedXML.append("</");      //value before opening the other tag
                                 fixedXML.append(openedTags.peek().substring(1));
                             }
+                            //pop that opened tag (old) from the stack, as it is either closed
+                            // during fix or must before opening the other tag
                             openedTags.pop();
                             hasValue = false;
                         }
+                        //push the opened tag to the stack and append it to the fixed XML
                         openedTags.push(tag);
                         if (fix) {
                             fixedXML.append(tag);
                         }
-                    } else if (isClosingTag(tag)) {
+                    } else if (isClosingTag(tag)) {     //if the tag is closing tag
+                        //if it's the closing tag of the last opened (top of the stack)
                         if (!openedTags.empty() && arePairedTags(openedTags.peek(), tag)) {
                             openedTags.pop();
                             hasValue = false;
                             if (fix) {
                                 fixedXML.append(tag);
                             }
+                            //if it's not the same as the top of the stack we check
                         } else if (!openedTags.empty() && !arePairedTags(openedTags.peek(), tag)) {
                             Stack<String> unclosedtags = new Stack<>();
                             while (!openedTags.empty() && !arePairedTags(openedTags.peek(), tag)) {
                                 unclosedtags.push(openedTags.pop());
                             }
+                            //if it's not in the stack --> error: a closing tag for no opening tag
+                            //neglected (not appended to fixed XML)
                             if (openedTags.empty()) {
                                 errors.add("Line " + line + ": No opening tag for closing tag " + tag);
                                 while (!unclosedtags.empty()) {
                                     openedTags.push(unclosedtags.pop());
                                 }
                             } else {
+                                //if it's in the stack but includes some opening tags that is not closed
+                                //error --> we must close these tags first
+                                //fixed by appending closing tags for these tags to the fixed XML
+                                //and pop their opening from the stack
                                 while (!unclosedtags.empty()) {
                                     errors.add("Line " + line + ": Expected closing tag for " + unclosedtags.peek()
                                             + " before closing tag " + tag);
@@ -171,6 +217,8 @@ public class XML {
                                     }
                                     unclosedtags.pop();
                                 }
+                                //Now it's matching the opening tag at the top of the stack
+                                //then pop from stack and append to the fixed XML
                                 openedTags.pop();
                                 if (fix) {
                                     fixedXML.append(tag);
@@ -178,11 +226,14 @@ public class XML {
                             }
                         }
                     }
-                    inTag = false;
-                    tag = "";
+                    inTag = false;      //after handling the tag --> set inTag to false
+                    tag = "";           //clear the String tag
                 }
             }
         }
+        //After reaching the end of the file, we check the opened tags stack
+        //If it's not empty, then there is an error: missing closing tags for some opened tags
+        //fixed by appending the closing tags of these tags
         while (!openedTags.empty()) {
             errors.add("Expected closing tag for " + openedTags.peek() + " before the end of the file");
             if (fix) {
@@ -191,16 +242,17 @@ public class XML {
             }
             openedTags.pop();
         }
+        //in case of fix, we replace the fixed XML with the current xml
         if (fix) {
             this.xml = fixedXML.toString();
         }
+        //if there are errors, return the errors. Else return null indicating no errors
         return errors.isEmpty() ? null : errors;
     }
 
     //O(n), where n is the number of char in xml file
     void sliceXML() {
         boolean inValue = false;
-        String currentLeafTag = null;
         slicedXML = new ArrayList<String>();
         char[] xmlchars = xml.toCharArray();
         StringBuilder s = new StringBuilder();
@@ -220,11 +272,10 @@ public class XML {
                 }
                 //check whether next String is value or tag
                 if (i + 1 < xmlchars.length && xmlchars[i + 1] != '<') {
-                    currentLeafTag = slicedXML.get(slicedXML.size() - 1);
                     inValue = true;
                 }
-            } else if (!inValue && (xmlchars[i] == ' ' || xmlchars[i] == '\t')) {//Skip white spaces outside values
-            } else if (inValue && xmlchars[i + 1] == '<') { //slice before the closing tag
+            } else if (!inValue && (xmlchars[i] == ' ' || xmlchars[i] == '\t'));//Skip white spaces outside values
+            else if (inValue && xmlchars[i + 1] == '<') { //slice before the closing tag
                 s.append(xmlchars[i]);
                 slicedXML.add(s.toString());
                 s = new StringBuilder();
@@ -237,11 +288,14 @@ public class XML {
     }
 
     //O(n), where n is the number of slices in slicedXML
+    //O(n), where n is the number of char if file is not sliced
     String minifyXML() {
         if (!sliced) {
             sliceXML();
         }
         StringBuilder minified = new StringBuilder();
+        //concatenate all slices with no white spaces.
+        //White spaces inside attribute values (like post body) is not removed (stored in the slices).
         for (String s : slicedXML) {
             minified.append(s);
         }
