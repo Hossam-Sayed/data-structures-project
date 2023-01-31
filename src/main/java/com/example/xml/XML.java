@@ -340,40 +340,45 @@ public class XML {
     }
 
 
+    // the recursive function tha do the format of the current node
+    // its parameter is the indentation of the parent node and the other parameter is the node itself
     String formatingNode(String str, TreeNode node) {
+        //creating a string builder that takes the indentation of the parent node and add the remaining part to be the indentation fot thr current node
         StringBuilder addition = new StringBuilder();
-        addition.append(str + "\t");
+        addition.append(str).append("\t");
+        //creating a string builder that saves the format of the current nodes and its children
         StringBuilder strs = new StringBuilder();
-        strs.append("<" + node.getTagName() + ">");
-        ArrayList<TreeNode> childrens = node.getChildren();
-        if (!childrens.isEmpty()) {
+        strs.append("<").append(node.getTagName()).append(">"); // formatting the open tag of the current node
+        ArrayList<TreeNode> childrens = node.getChildren(); //creating array list contains the children of the current node
+        if (!childrens.isEmpty()) { //if the node is not a leaf node
             for (int i = 0; i < childrens.size(); i++) {
-                strs.append(addition);
+                // looping along the children and call the function again(recursively) with each child node
+                strs.append(addition); //indentation for formatting the xml file
                 strs.append(formatingNode(addition.toString(), childrens.get(i)));
             }
-        } else {
-            strs.append(addition + node.getData() + str + "</" + node.getTagName() + ">");
-            return strs.toString();
+        } else { //if the node is a leaf node
+            strs.append(addition).append(node.getData()).append(str).append("</").append(node.getTagName()).append(">"); //formatting of the open tag of leaf node
+            return strs.toString(); // return the string
         }
-        strs.append(str + "</" + node.getTagName() + ">");
-        return strs.toString();
+        strs.append(str).append("</").append(node.getTagName()).append(">");// formation of the closed tag of the current node
+        return strs.toString(); // return the string
     }
-
+    //make the format of a xml file using the xml tree
     void format() {
-        if (xmlTree == null) {
-            this.xmlToTree();
+        if (xmlTree == null) { //if there is no xmlTree for the xml file created
+            this.xmlToTree(); //create the tree
         }
-        String str = "";
-        TreeNode node = xmlTree.getRoot();
+        String str = ""; //create a string that saves all the format of the xml in it
+        TreeNode node = xmlTree.getRoot(); //get the node of the tree of the xml file
         if (node != null) {
-            str = formatingNode("\n", node);
+            str = formatingNode("\n", node); //we call a recursive function that do the format of the current node
         }
         xml = str;
     }
 
 
     void stringToXmlFile(String path) {
-        // create a file object for the current location
+        // create a file object for the choosed path
         File file = new File(path);
         try {
             // create a new file with name specified
@@ -389,6 +394,7 @@ public class XML {
             }
         } catch (Exception e) {
             e.getStackTrace();
+            // Ignored as we use file chooser in GUI so no possible errors will occur
         }
     }
 
@@ -409,107 +415,111 @@ public class XML {
             }
         } catch (Exception e) {
             e.getStackTrace();
+            // Ignored as we use file chooser in GUI so no possible errors will occur
         }
     }
 
-
+    // the recursive function tha do the format of the children nodes of the current node
+    // its parameter is the indentation of the current node and the other parameter is the node itself
     String jsonFormattingNode(String str, TreeNode node) {
+        //creating a string builder that takes the indentation of the current node
         StringBuilder addition = new StringBuilder();
         addition.append(str);
+        //this addition will be always done except if the current node is a leaf node so we don't add any additions we just print its data at the end of the function
         if (!addition.toString().equals(" ")) {
-            addition.append("\t");
+            addition.append("\t"); //add the remaining part to be the indentation fot thr children nodes
         }
-        StringBuilder strs = new StringBuilder();
-        ArrayList<TreeNode> childrens = node.getChildren();
-        ArrayList<TreeNode> sortedChildrens = new ArrayList<>();
-        int[] visitedChildrens = new int[childrens.size()];
+        StringBuilder strs = new StringBuilder();  //creating a string builder that saves the JSON format of the current nodes and its children
+        ArrayList<TreeNode> childrens = node.getChildren(); //creating array list contains the children of the current node
+        //we will sort the children nodes for some JSON formatting-purposes(to get all the child nodes that have the same tag name after each others)
+        ArrayList<TreeNode> sortedChildrens = new ArrayList<>(); //creating empty array list
+        int[] visitedChildrens = new int[childrens.size()]; // array to know if it has been sorted or not
 
         for (int i = 0; i < childrens.size(); i++) {
-            if (visitedChildrens[i] == 1)
+            if (visitedChildrens[i] == 1) //if the node is sorted already and have been added to the sorted array
                 continue;
 
-            sortedChildrens.add(childrens.get(i));
-            visitedChildrens[i] = 1;
+            sortedChildrens.add(childrens.get(i)); //add the node to the sorted array
+            visitedChildrens[i] = 1; // mark that the node is sorted
 
+            //check all the other nodes
             for (int j = 0; j < childrens.size(); j++) {
                 if (childrens.get(i).getTagName().equals(childrens.get(j).getTagName()) && (i != j)) {
-                    sortedChildrens.add(childrens.get(j));
-                    visitedChildrens[j] = 1;
+                    //if a tag name of a node is equal to the current node tag name
+                    sortedChildrens.add(childrens.get(j)); // we will add the similar node to the array after the original
+                    visitedChildrens[j] = 1; // and mark that it is sorted
                 }
-
             }
         }
 
-        if (!sortedChildrens.isEmpty()) {
-            for (int i = 0; i < sortedChildrens.size(); i++) {
+        if (!sortedChildrens.isEmpty()) { //check if the array is not empty
+            for (int i = 0; i < sortedChildrens.size(); i++) { //go through all nodes
                 if (i < sortedChildrens.size() - 1 && sortedChildrens.get(i).getTagName().equals(sortedChildrens.get(i + 1).getTagName())) {
-                    strs.append(addition + "\"" + (sortedChildrens.get(i).getTagName()) + "\":" + "[");
-                    String s = sortedChildrens.get(i).getTagName();
-                    while (i < sortedChildrens.size() && sortedChildrens.get(i).getTagName().equals(s)) {
-                        if (sortedChildrens.get(i).getChildren() != null && sortedChildrens.get(i).getChildren().size() >= 1) {
-                            strs.append(addition + "\t{");
-                            strs.append(jsonFormattingNode(addition.toString() + "\t", sortedChildrens.get(i)));
-                            if (strs.charAt(strs.length() - 1) == ',') {
+                    //if the current node tag name equals to the consecutive node tag name after it in the sorted array (related to the JSON format)
+                    strs.append(addition).append("\"").append(sortedChildrens.get(i).getTagName()).append("\":").append("[");
+                    //we open an object array in the JSON format with this tag name(for JSON format purposes)
+                    String s = sortedChildrens.get(i).getTagName();//we save this tag name in a string
+                    while (i < sortedChildrens.size() && sortedChildrens.get(i).getTagName().equals(s)) {// for all nodes that have the same tag name
+                        if (sortedChildrens.get(i).getChildren() != null && sortedChildrens.get(i).getChildren().size() >= 1) { //if the node have children
+                            strs.append(addition).append("\t{"); //add the indentation with the start of the coming object (related to the JSON format)
+                            strs.append(jsonFormattingNode(addition.toString() + "\t", sortedChildrens.get(i))); //recall the function again with this node
+                            if (strs.charAt(strs.length() - 1) == ',') {//a condition to remove the last comma in the format (something for the JSON format)
                                 strs.deleteCharAt(strs.length() - 1);
                             }
-                            strs.append(addition + "\t},");
-                        } else {
+                            strs.append(addition).append("\t},");// add the end of the object (related to the JSON format)
+                        } else {//if the node doesn't have children
                             strs.append(jsonFormattingNode(addition.toString(), sortedChildrens.get(i)));
                         }
                         i++;
                     }
                     i--;
-                    if (strs.charAt(strs.length() - 1) == ',') {
+                    if (strs.charAt(strs.length() - 1) == ',') {//a condition to remove the last comma in the format (something for the JSON format)
                         strs.deleteCharAt(strs.length() - 1);
                     }
-                    strs.append(addition + "],");
-                } else {
+                    strs.append(addition).append("],"); // end of the array format in JSON format
+                } else {//if the current node tag name is not equal to the consecutive node tag name after it in the sorted array
                     if (sortedChildrens.get(i).getChildren() != null
-                            && !sortedChildrens.get(i).getChildren().isEmpty()) {
-                        strs.append(addition + "\"" + sortedChildrens.get(i).getTagName() + "\":" + "{");
-                        strs.append(jsonFormattingNode(addition.toString(), sortedChildrens.get(i)));
-                        if (strs.charAt(strs.length() - 1) == ',') {
+                            && !sortedChildrens.get(i).getChildren().isEmpty()) { //we check if this node have children
+                        strs.append(addition).append("\"").append(sortedChildrens.get(i).getTagName()).append("\":").append("{"); //format the node
+                        strs.append(jsonFormattingNode(addition.toString(), sortedChildrens.get(i)));//recall the function with this node
+                        if (strs.charAt(strs.length() - 1) == ',') {//a condition to remove the last comma in the format (something for the JSON format)
                             strs.deleteCharAt(strs.length() - 1);
                         }
-                        strs.append(addition + "},");
-                    } else {
-                        strs.append(addition + "\"" + sortedChildrens.get(i).getTagName() + "\":");
-                        strs.append(jsonFormattingNode(" ", sortedChildrens.get(i)));
+                        strs.append(addition).append("},");//add the end for the formation
+                    } else {//if this node doesn't have children
+                        strs.append(addition).append("\"").append(sortedChildrens.get(i).getTagName()).append("\":");//format the node
+                        strs.append(jsonFormattingNode(" ", sortedChildrens.get(i)));//we recall the function to print the data for the node
                     }
                 }
 
 
             }
 
-        } else {
-            strs.append(addition + "\"" + node.getData() + "\"" + ",");
+        } else { //if the sorted array is empty then there is no children for the current nodes,then the current node is a leaf node
+            strs.append(addition).append("\"").append(node.getData()).append("\"").append(","); //we will print its data
         }
-        return strs.toString();
+        return strs.toString(); //return the JSON format
 
     }
-
+    //make the JSON format of a xml file using the xml tree
+    // this function is the same as the xml format but the difference is that the recursive function makes the format of the child nodes not the current node
     String xmlToJson() {
-        if (xmlTree == null) {
-            this.xmlToTree();
+        if (xmlTree == null) {  //if there is no xmlTree for the xml file created
+            this.xmlToTree(); //create the tree
             //  xmlToJson();
         }
-        StringBuilder str = new StringBuilder();
-        str.append("{\n");
-        //String str = "{\n";
-        TreeNode node = xmlTree.getRoot();
+        StringBuilder str = new StringBuilder(); //create a string builder that saves all the JSON format of the xml in it
+        str.append("{\n"); //the starting of the JSON format
+        TreeNode node = xmlTree.getRoot(); //get the node of the tree of the xml file
         if (node != null) {
-            str.append("\t" + "\"" + node.getTagName() + "\"" + ":{");
-            //str +="\t" +"\""+ node.getTagName() +"\""+":{";
-            str.append(jsonFormattingNode("\n\t", node));
-            //str += jsonFormatingNode("\n\t", node);
-
+            str.append("\t").append("\"").append(node.getTagName()).append("\"").append(":{"); // format the tag name of the root node
+            str.append(jsonFormattingNode("\n\t", node)); //we call a recursive function that do the JSON format of the child nodes of the current node
         }
-        if (str.charAt(str.length() - 1) == ',') {
+        // format the end of the root node
+        if (str.charAt(str.length() - 1) == ',') { //a condition to remove the last comma in the format (something for the JSON format)
             str.deleteCharAt(str.length() - 1);
         }
-        str.append("\n\t}" + "\n}");
-        //str +="\n\t}";
-        //str += "\n}";
+        str.append("\n\t}").append("\n}"); //the end of the JSON format
         return str.toString();
     }
 
