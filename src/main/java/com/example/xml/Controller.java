@@ -42,6 +42,8 @@ public class Controller {
     public TextArea resultText;
     public TextField inputTextField2;
     public TextField inputTextField1;
+    public Button saveButton;
+    public Button saveAsButton;
     XML xmlFile;
 
     public XML getXmlFile() {
@@ -55,6 +57,7 @@ public class Controller {
 
     @FXML
     public void xmlFileChooser() {
+        labelText.setText("");
         FileChooser fc = new FileChooser();
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter(".xml", "*.xml"));
         File f = fc.showOpenDialog(null);
@@ -62,11 +65,13 @@ public class Controller {
             xmlFile = new XML(f);
             mainTextArea.setText(xmlFile.getXml());
             browseTextField.setText(f.getPath());
+            saveButton.setDisable(false);
         }
     }
 
     @FXML
     protected void onTextChanged() {
+        labelText.setText("");
         if (!mainTextArea.getText().equals("")) {
             xmlFile = new XML(mainTextArea.getText());
         } else {
@@ -82,8 +87,8 @@ public class Controller {
 
     @FXML
     protected void onMinifyClick() throws IOException {
+        labelText.setText("");
         if (xmlFile == null) {
-
             labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
             labelText.setTextFill(Color.RED);
             labelText.setText("Choose an XML file");
@@ -91,6 +96,9 @@ public class Controller {
             Controller controller = openOutputWindow("Minify", "output-view.fxml");
             String minifiedXML = xmlFile.minifyXML();
             controller.outputTextArea.setText(minifiedXML);
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
+            labelText.setTextFill(Color.GREEN);
+            labelText.setText("Minified");
         }
     }
 
@@ -103,16 +111,21 @@ public class Controller {
 
     @FXML
     protected void saveToFile() {
+        labelText.setText("");
         FileChooser fc = new FileChooser();
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter(".xml", "*.xml"));
         File f = fc.showSaveDialog(null);
         if (f != null) {
             xmlFile.stringToXmlFile(f.getPath());
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
+            labelText.setTextFill(Color.GREEN);
+            labelText.setText("Saved To a New File");
         }
     }
 
     @FXML
     protected void compress() {
+        labelText.setText("");
         if (xmlFile == null) {
             labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
             labelText.setTextFill(Color.RED);
@@ -123,6 +136,9 @@ public class Controller {
             File f = fc.showSaveDialog(null);
             if (f != null) {
                 xmlFile.compress(f.getPath());
+                labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
+                labelText.setTextFill(Color.GREEN);
+                labelText.setText("Compressed");
             }
         }
     }
@@ -141,6 +157,7 @@ public class Controller {
 
     @FXML
     protected void onValidateClick() throws IOException {
+        labelText.setText("");
         if (xmlFile == null) {
             labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
             labelText.setTextFill(Color.RED);
@@ -180,14 +197,18 @@ public class Controller {
 
     @FXML
     protected void onFixErrorsClick() {
+        labelText.setText("");
         xmlFile.fixErrors();
         mainTextArea.setText(xmlFile.getXml());
         fixErrorsButton.setDisable(true);
-        labelText.setText("");
+        labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
+        labelText.setTextFill(Color.GREEN);
+        labelText.setText("Errors Fixed");
     }
 
     @FXML
     protected void onFormatClick() {
+        labelText.setText("");
         if (xmlFile == null) {
             labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
             labelText.setTextFill(Color.RED);
@@ -195,14 +216,21 @@ public class Controller {
         } else {
             xmlFile.format();
             mainTextArea.setText(xmlFile.getXml());
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
+            labelText.setTextFill(Color.GREEN);
+            labelText.setText("Formatted");
         }
     }
 
     @FXML
     protected void onConvertToJsonClick() throws IOException {
+        labelText.setText("");
         String json = xmlFile.xmlToJson();
         Controller controller = openOutputWindow("JSON", "json-output-view.fxml");
         controller.jsonOutputTextArea.setText(json);
+        labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
+        labelText.setTextFill(Color.GREEN);
+        labelText.setText("Converted To JSON");
     }
 
     @FXML
@@ -219,6 +247,7 @@ public class Controller {
 
     @FXML
     protected void onNetworkAnalysisClick() throws IOException {
+        labelText.setText("");
         xmlFile.xmlToGraph();
         openOutputWindow("Network Analysis", "network-analysis-view.fxml");
     }
@@ -280,7 +309,7 @@ public class Controller {
         Controller controller = mainLoader.getController();
         xmlFile = controller.getXmlFile();
         resultText.setText("");
-        resultText.setFont(Font.font("arial", FontWeight.BOLD, 10));
+        resultText.setFont(Font.font("arial", FontWeight.BOLD, 11));
         if (!inputTextField1.getText().equals("")) {
             ArrayList<User> suggestedFollowers = xmlFile.suggestFollowers(inputTextField1.getText());
             if (suggestedFollowers == null) {
@@ -301,6 +330,7 @@ public class Controller {
 
     @FXML
     protected void onSearchPostClick() throws IOException {
+        labelText.setText("");
         xmlFile.xmlToGraph();
         openOutputWindow("Search Posts", "search-input-window.fxml");
     }
@@ -314,10 +344,12 @@ public class Controller {
         if (!inputTextField1.getText().equals("")) {
             ArrayList<Post> posts = xmlFile.searchPosts(inputTextField1.getText());
             if (posts == null) {
+                resultText.setFont(Font.font("arial", FontWeight.BOLD, 11));
                 resultText.setStyle("-fx-text-fill: red ;");
                 resultText.setText("\nInvalid input");
                 return;
             } else if (posts.isEmpty()) {
+                resultText.setFont(Font.font("arial", FontWeight.BOLD, 11));
                 resultText.setStyle("-fx-text-fill: red ;");
                 resultText.setText("\nNo Posts Found");
                 return;
@@ -329,6 +361,32 @@ public class Controller {
         }
     }
 
+    @FXML
+    protected void onSaveClick() {
+        labelText.setText("");
+        if (xmlFile == null) {
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
+            labelText.setTextFill(Color.RED);
+            labelText.setText("Text Area Is Empty");
+        } else {
+            xmlFile.stringToXmlFile(browseTextField.getText());
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
+            labelText.setTextFill(Color.GREEN);
+            labelText.setText("File Saved");
+        }
+    }
+
+    @FXML
+    protected void onSaveAsClick() {
+        labelText.setText("");
+        if (xmlFile == null) {
+            labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
+            labelText.setTextFill(Color.RED);
+            labelText.setText("Text Area Is Empty");
+        } else {
+            saveToFile();
+        }
+    }
 
     private Controller openOutputWindow(String stageName, String resource) throws IOException {
         outputLoader = new FXMLLoader(Main.class.getResource(resource));
