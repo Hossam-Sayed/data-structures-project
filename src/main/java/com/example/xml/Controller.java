@@ -106,7 +106,6 @@ public class Controller {
     protected void exportToTextArea() {
         Controller controller = mainLoader.getController();
         controller.mainTextArea.setText(outputTextArea.getText());
-//        xmlFile = new XML(controller.mainTextArea.getText());
     }
 
     @FXML
