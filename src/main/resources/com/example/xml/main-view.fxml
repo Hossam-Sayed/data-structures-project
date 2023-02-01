@@ -12,7 +12,7 @@
     <children>
         <VBox HBox.hgrow="ALWAYS">
             <children>
-                <TextArea fx:id="mainTextArea" onKeyTyped="#onTextChanged" VBox.vgrow="ALWAYS" />
+                <TextArea fx:id="mainTextArea" onContextMenuRequested="#onTextChanged" onKeyTyped="#onTextChanged" VBox.vgrow="ALWAYS" />
                 <HBox alignment="CENTER" maxWidth="1.7976931348623157E308" prefWidth="200.0" VBox.vgrow="SOMETIMES">
                     <children>
                         <TextField fx:id="browseTextField" editable="false" maxWidth="1.7976931348623157E308" prefWidth="413.0" HBox.hgrow="ALWAYS" />

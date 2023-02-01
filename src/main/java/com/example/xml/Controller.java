@@ -106,20 +106,17 @@ public class Controller {
     protected void exportToTextArea() {
         Controller controller = mainLoader.getController();
         controller.mainTextArea.setText(outputTextArea.getText());
-        xmlFile = new XML(controller.mainTextArea.getText());
+//        xmlFile = new XML(controller.mainTextArea.getText());
     }
 
     @FXML
     protected void saveToFile() {
-        labelText.setText("");
         FileChooser fc = new FileChooser();
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter(".xml", "*.xml"));
         File f = fc.showSaveDialog(null);
+        xmlFile = new XML(outputTextArea.getText());
         if (f != null) {
             xmlFile.stringToXmlFile(f.getPath());
-            labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
-            labelText.setTextFill(Color.GREEN);
-            labelText.setText("Saved To a New File");
         }
     }
 
@@ -362,14 +359,16 @@ public class Controller {
     }
 
     @FXML
-    protected void onSaveClick() {
+    protected void onSaveClick() throws IOException {
         labelText.setText("");
         if (xmlFile == null) {
             labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
             labelText.setTextFill(Color.RED);
             labelText.setText("Text Area Is Empty");
         } else {
-            xmlFile.stringToXmlFile(browseTextField.getText());
+            try (FileWriter output = new FileWriter(browseTextField.getText())) {
+                output.write(mainTextArea.getText());
+            }
             labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
             labelText.setTextFill(Color.GREEN);
             labelText.setText("File Saved");
@@ -377,14 +376,24 @@ public class Controller {
     }
 
     @FXML
-    protected void onSaveAsClick() {
+    protected void onSaveAsClick() throws IOException {
         labelText.setText("");
         if (xmlFile == null) {
             labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
             labelText.setTextFill(Color.RED);
             labelText.setText("Text Area Is Empty");
         } else {
-            saveToFile();
+            FileChooser fc = new FileChooser();
+            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter(".xml", "*.xml"));
+            File f = fc.showSaveDialog(null);
+            if (f != null) {
+                try (FileWriter output = new FileWriter(f.getPath())) {
+                    output.write(mainTextArea.getText());
+                }
+                labelText.setFont(Font.font("arial", FontWeight.BOLD, 11));
+                labelText.setTextFill(Color.GREEN);
+                labelText.setText("Saved To New File");
+            }
         }
     }
 
