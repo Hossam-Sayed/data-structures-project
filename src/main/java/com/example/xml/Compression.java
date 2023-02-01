@@ -199,7 +199,7 @@ public class Compression {
     }
 
     //main for testing compression
-    public static void main(String[] args) throws FileNotFoundException, IOException {
+//    public static void main(String[] args) throws FileNotFoundException, IOException {
         /*XML xml = new XML(new File("sample.xml"));
         HuffmanTree tree = new HuffmanTree(xml.getXml());
         String s = tree.preOrderTraverse();
@@ -214,7 +214,7 @@ public class Compression {
         System.out.println(TreebinaryString);
         System.out.println(FilebinaryString);*/
 
-    }
+//    }
 }
 
 class HuffmanTree {

@@ -430,7 +430,6 @@ public class XML {
         xml = str;
     }
 
-
     void stringToXmlFile(String path) {
         // create a file object for the choosed path
         File file = new File(path);
@@ -763,7 +762,7 @@ public class XML {
         return str.substring(1, str.length() - 1);
     }
 
-    public static void main(String[] args) throws FileNotFoundException, IOException {
+//    public static void main(String[] args) throws FileNotFoundException, IOException {
 
 //        suggestFollowers test
 //        XML xml = new XML(new File("sampleFollowers.xml"));
@@ -809,5 +808,5 @@ public class XML {
             // xml.str_to_xmlFile();
             //xml.str_to_jsonFile(ste);
         }*/
-    }
+//    }
 }
