@@ -577,12 +577,12 @@ public class XML {
     }
 
     //    O(n), n is the number of users
-    User getMostActive() { // returns the most active user (first user with most followers + follows)
+    User getMostActive() { // returns the most active user (first user with most follows)
         User mostActive = xmlGraph.getUsers().get(0); // Initialize the most active user as the first user
-        int maxActivityDegree = mostActive.getFollows() + mostActive.getFollowers().size(); // Initialize the max degree
+        int maxFollows = mostActive.getFollows(); // Initialize the max follows
         for (User user : xmlGraph.getUsers()) { // Iterate over each user in the graph
-            if (user.getFollows() + user.getFollowers().size() > maxActivityDegree) { // If the user has a degree more than the max degree so far
-                maxActivityDegree = user.getFollows() + user.getFollowers().size(); // Update maxActivityDegree
+            if (user.getFollows() > maxFollows) { // If the user has follows more than the max follows so far
+                maxFollows = user.getFollows(); // Update maxFollows
                 mostActive = user; // Make this user the most active
             }
         }
